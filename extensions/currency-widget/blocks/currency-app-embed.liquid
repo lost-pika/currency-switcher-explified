@@ -1,0 +1,19 @@
+<div id="mlv-widget-root"></div>
+
+<script>
+  window.__MLV_APP_ORIGIN__ = "https://anybody-singer-castle-fiber.trycloudflare.com";
+  window.__MLV_SHOP__ = "{{ shop.permanent_domain }}";
+  window.__SHOP_BASE_CURRENCY__ = "{{ shop.currency }}";
+</script>
+
+
+<script src="{{ 'currency-widget.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Currency Widget",
+  "target": "body",
+  "javascript": "currency-widget.js",
+  "settings": []
+}
+{% endschema %}
