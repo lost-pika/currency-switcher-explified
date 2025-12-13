@@ -673,7 +673,7 @@ const { shop } = useLoaderData();
       }
 
       console.log("📝 Loading settings for shop:", shop);
-      const url = `/api/merchant-settings?shop=${shop}=${encodeURIComponent(shop)}`;
+      const url = `/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
       console.log("hello");
       const res = await fetch(url);
       console.log("res");
