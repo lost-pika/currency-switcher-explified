@@ -1,5 +1,6 @@
 // app/routes/app._index.jsx (or wherever your settings component is)
 import React, { useState, useCallback, useEffect } from "react";
+import { useLoaderData } from "react-router";
 
 const ALL_CURRENCIES = [
   { code: "USD", label: "USD - US Dollar" },
@@ -24,6 +25,15 @@ const MOCK_CHECKBOX_DATA = [
   { code: "JPY_1", label: "JPY - Japanese Yen", actualCode: "JPY" },
   { code: "AUD_1", label: "AUD - Australian Dollar", actualCode: "AUD" },
 ];
+
+export async function loader({ request }) {
+  const url = new URL(request.url);
+  const shop = url.searchParams.get("shop") || "unknown-shop";
+
+  return {
+    shop,
+  };
+}
 
 // =========================================================================
 // STEP 1: CURRENCY SELECTOR COMPONENT
@@ -651,16 +661,12 @@ export default function SettingsRoute() {
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({});
   const [loading, setLoading] = useState(true);
-
+const { shop } = useLoaderData();
   // Load saved settings from backend on mount
   useEffect(() => {
   (async () => {
     try {
-      const shop =
-        (typeof window !== "undefined" &&
-          (window.__MLV_SHOP__ || window.location.hostname)) ||
-        "";
-
+      
       if (!shop) {
         console.warn("No shop identifier");
         return;
@@ -668,7 +674,9 @@ export default function SettingsRoute() {
 
       console.log("📝 Loading settings for shop:", shop);
       const url = `/api/settings?shop=${encodeURIComponent(shop)}`;
+      console.log("hello");
       const res = await fetch(url);
+      console.log("res");
 
       if (!res.ok) {
         console.warn("Failed to fetch settings:", res.status);
