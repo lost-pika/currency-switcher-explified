@@ -666,36 +666,35 @@ const { shop } = useLoaderData();
   useEffect(() => {
   (async () => {
     try {
-      
       if (!shop) {
         console.warn("No shop identifier");
         return;
       }
 
       console.log("📝 Loading settings for shop:", shop);
-      const url = `/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
-      console.log("hello");
-      const res = await fetch(url);
-      console.log("res");
+
+      const res = await fetch(
+        `/api/merchant-settings?shop=${encodeURIComponent(shop)}`
+      );
+
+      console.log("🟢 fetch returned");
 
       if (!res.ok) {
         console.warn("Failed to fetch settings:", res.status);
         return;
       }
 
-     const json = await res.json();
-console.log("✅ Loaded settings:", json);
-
-// API returns settings directly
-setStep1Data(json);
-
+      const json = await res.json();
+      console.log("✅ Loaded settings:", json);
+      setStep1Data(json);
     } catch (err) {
-      console.error("Failed to load saved settings:", err);
+      console.error("❌ Failed to load saved settings:", err);
     } finally {
-      setLoading(false); // ✅ ALWAYS runs
+      setLoading(false); // ✅ ALWAYS runs now
     }
   })();
-}, []);
+}, [shop]);
+
 
 
   const handleStep1Save = useCallback((data) => {
