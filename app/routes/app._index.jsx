@@ -661,7 +661,10 @@ export default function SettingsRoute() {
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({});
   const [loading, setLoading] = useState(true);
-const { shop } = useLoaderData();
+// const { shop } = useLoaderData();
+const shop = new URLSearchParams(window.location.search).get("shop");
+console.log("loader data:", useLoaderData());
+
   // Load saved settings from backend on mount
   useEffect(() => {
   (async () => {
