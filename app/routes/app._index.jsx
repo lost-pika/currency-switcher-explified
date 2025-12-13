@@ -667,19 +667,24 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
+        // ✅ FIX: Use absolute URL to your Vercel deployment
+        const API_BASE = "https://currency-switcher-explified.vercel.app";
         const res = await fetch(
-          `/api/merchant-settings?shop=${encodeURIComponent(shop)}`,
+          `${API_BASE}/api/merchant-settings?shop=${encodeURIComponent(shop)}`,
         );
 
         if (!res.ok) {
+          console.log("Response not OK:", res.status);
           setLoading(false);
           return;
         }
 
         const json = await res.json();
+        console.log("✅ Settings loaded:", json);
         setStep1Data(json);
       } catch (err) {
-        console.error(err);
+        console.error("❌ Error loading settings:", err);
+        setLoading(false);
       } finally {
         setLoading(false);
       }
@@ -694,21 +699,9 @@ export default function SettingsRoute() {
 
   const handleStep2Save = useCallback(
     async (data) => {
-      const payloadForBackend = {
-        currencies: step1Data.selectedCurrencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        placement: data.placement,
-        fixedCorner: data.fixedCorner,
-        distanceTop: data.distanceTop,
-        distanceRight: data.distanceRight,
-        distanceBottom: data.distanceBottom,
-        distanceLeft: data.distanceLeft,
-      };
-
-      console.log("📝 [Step2] Sending to /api/settings:", payloadForBackend);
-
       try {
-        const res = await fetch("/api/merchant-settings", {
+        const API_BASE = "https://currency-switcher-explified.vercel.app";
+        const res = await fetch(`${API_BASE}/api/merchant-settings`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -718,8 +711,6 @@ export default function SettingsRoute() {
             placement: data.placement,
           }),
         });
-        console.log("API status:", res.status);
-
 
         const text = await res.text();
         console.log("📝 [Step2] Response status:", res.status);
@@ -738,12 +729,13 @@ export default function SettingsRoute() {
         alert("Failed to save settings: " + (err.message || err));
       }
     },
-    [step1Data],
+    [step1Data, shop],
   );
 
   if (loading) {
     return <div className="p-6">Loading settings…</div>;
   }
+
 
   if (step === 1) {
     return (
