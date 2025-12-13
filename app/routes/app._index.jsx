@@ -55,7 +55,7 @@ function CurrencySelector({
   }, [initialDefault]);
 
   const selectedCurrencies = ALL_CURRENCIES.filter((c) =>
-    selectedCodes.includes(c.code)
+    selectedCodes.includes(c.code),
   );
 
   const toggleCode = useCallback(
@@ -72,7 +72,7 @@ function CurrencySelector({
         return Array.from(new Set(next));
       });
     },
-    [defaultCode]
+    [defaultCode],
   );
 
   const handleRemoveAll = useCallback(() => {
@@ -91,7 +91,7 @@ function CurrencySelector({
   };
 
   const availableToAdd = ALL_CURRENCIES.filter(
-    (c) => !selectedCodes.includes(c.code)
+    (c) => !selectedCodes.includes(c.code),
   );
   const isDisabled = selectedCodes.length === 0 || !defaultCode;
 
@@ -323,11 +323,11 @@ function PlacementSelector({
   useEffect(() => setDistanceTop(initialDistanceTop), [initialDistanceTop]);
   useEffect(
     () => setDistanceRight(initialDistanceRight),
-    [initialDistanceRight]
+    [initialDistanceRight],
   );
   useEffect(
     () => setDistanceBottom(initialDistanceBottom),
-    [initialDistanceBottom]
+    [initialDistanceBottom],
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
@@ -644,8 +644,6 @@ function ConfirmationScreen({ onReview }) {
   );
 }
 
-
-
 // =========================================================================
 // MAIN EXPORT
 // =========================================================================
@@ -653,45 +651,40 @@ export default function SettingsRoute() {
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({});
   const [loading, setLoading] = useState(true);
-const [shop, setShop] = useState(null);
+  const [shop, setShop] = useState(null);
 
-useEffect(() => {
-  if (typeof window === "undefined") return;
-  const s = new URLSearchParams(window.location.search).get("shop");
-  setShop(s);
-}, []);
-
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const s = new URLSearchParams(window.location.search).get("shop");
+    setShop(s);
+  }, []);
 
   // Load saved settings from backend on mount
-useEffect(() => {
-  if (!shop) return;
+  useEffect(() => {
+    if (!shop) return;
 
-  (async () => {
-    try {
-      console.log("📝 Loading settings for shop:", shop);
+    (async () => {
+      try {
+        console.log("📝 Loading settings for shop:", shop);
 
-      const res = await fetch(
-        `/api/merchant-settings?shop=${encodeURIComponent(shop)}`
-      );
+        const res = await fetch(
+          `/api/merchant-settings?shop=${encodeURIComponent(shop)}`,
+        );
 
-      if (!res.ok) {
-  setLoading(false);
-  return;
-}
+        if (!res.ok) {
+          setLoading(false);
+          return;
+        }
 
-
-      const json = await res.json();
-      setStep1Data(json);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  })();
-}, [shop]);
-
-
-
+        const json = await res.json();
+        setStep1Data(json);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [shop]);
 
   const handleStep1Save = useCallback((data) => {
     console.log("📝 [Step1] Saving:", data);
@@ -716,15 +709,16 @@ useEffect(() => {
 
       try {
         const res = await fetch("/api/merchant-settings", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    shop,
-    currencies: step1Data.selectedCurrencies,
-    defaultCurrency: step1Data.defaultCurrency,
-    placement: data.placement,
-  }),
-});
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            shop,
+            currencies: step1Data.selectedCurrencies,
+            defaultCurrency: step1Data.defaultCurrency,
+            placement: data.placement,
+          }),
+        });
+        console.log("API status:", res.status);
 
 
         const text = await res.text();
@@ -744,7 +738,7 @@ useEffect(() => {
         alert("Failed to save settings: " + (err.message || err));
       }
     },
-    [step1Data]
+    [step1Data],
   );
 
   if (loading) {

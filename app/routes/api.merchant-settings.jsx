@@ -1,13 +1,23 @@
 import prisma from "../db.server";
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://admin.shopify.com",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "Content-Type": "application/json",
 };
 
 export async function loader({ request }) {
+
+    console.log("📝 [LOADER] Route hit:", request.url);
+  
+  // Handle CORS preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, { 
+      status: 204, 
+      headers: CORS_HEADERS 
+    });
+  }
   console.log("📝 [LOADER] Route hit:", request.url);
   
   // Handle CORS preflight
@@ -72,6 +82,16 @@ export async function loader({ request }) {
 }
 
 export async function action({ request }) {
+
+    console.log("📝 [ACTION] Route hit:", request.method);
+  
+  // Handle CORS preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, { 
+      status: 204, 
+      headers: CORS_HEADERS 
+    });
+  }
   console.log("📝 [ACTION] Route hit:", request.method);
   
   // Handle CORS preflight
