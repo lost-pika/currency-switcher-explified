@@ -644,6 +644,8 @@ function ConfirmationScreen({ onReview }) {
   );
 }
 
+
+
 // =========================================================================
 // MAIN EXPORT
 // =========================================================================
@@ -651,39 +653,39 @@ export default function SettingsRoute() {
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({});
   const [loading, setLoading] = useState(true);
-const shop = new URLSearchParams(window.location.search).get("shop");
+const [shop, setShop] = useState(null);
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  const s = new URLSearchParams(window.location.search).get("shop");
+  setShop(s);
+}, []);
+
+
   // Load saved settings from backend on mount
-  useEffect(() => {
+useEffect(() => {
+  if (!shop) return;
+
   (async () => {
     try {
-      if (!shop) {
-        console.warn("No shop identifier");
-        return;
-      }
-
       console.log("📝 Loading settings for shop:", shop);
 
       const res = await fetch(
         `/api/merchant-settings?shop=${encodeURIComponent(shop)}`
       );
 
-      console.log("🟢 fetch returned");
-
-      if (!res.ok) {
-        console.warn("Failed to fetch settings:", res.status);
-        return;
-      }
+      if (!res.ok) return;
 
       const json = await res.json();
-      console.log("✅ Loaded settings:", json);
       setStep1Data(json);
     } catch (err) {
-      console.error("❌ Failed to load saved settings:", err);
+      console.error(err);
     } finally {
-      setLoading(false); // ✅ ALWAYS runs now
+      setLoading(false);
     }
   })();
 }, [shop]);
+
 
 
 
