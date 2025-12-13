@@ -674,7 +674,11 @@ useEffect(() => {
         `/api/merchant-settings?shop=${encodeURIComponent(shop)}`
       );
 
-      if (!res.ok) return;
+      if (!res.ok) {
+  setLoading(false);
+  return;
+}
+
 
       const json = await res.json();
       setStep1Data(json);
