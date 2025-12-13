@@ -654,42 +654,41 @@ export default function SettingsRoute() {
 
   // Load saved settings from backend on mount
   useEffect(() => {
-    (async () => {
-      try {
-        const shop =
-          (typeof window !== "undefined" &&
-            (window.__MLV_SHOP__ || window.location.hostname)) ||
-          "";
+  (async () => {
+    try {
+      const shop =
+        (typeof window !== "undefined" &&
+          (window.__MLV_SHOP__ || window.location.hostname)) ||
+        "";
 
-        if (!shop) {
-          console.warn("No shop identifier");
-          setLoading(false);
-          return;
-        }
-
-        console.log("📝 Loading settings for shop:", shop);
-        const url = `/api/settings?shop=${encodeURIComponent(shop)}`;
-        const res = await fetch(url);
-
-        if (!res.ok) {
-          console.warn("Failed to fetch settings:", res.status);
-          setLoading(false);
-          return;
-        }
-
-        const settings = await res.json();
-        console.log("✅ Loaded settings:", settings);
-
-        if (settings) {
-          setStep1Data(settings);
-        }
-      } catch (err) {
-        console.error("Failed to load saved settings:", err);
-      } finally {
-        setLoading(false);
+      if (!shop) {
+        console.warn("No shop identifier");
+        return;
       }
-    })();
-  }, []);
+
+      console.log("📝 Loading settings for shop:", shop);
+      const url = `/api/settings?shop=${encodeURIComponent(shop)}`;
+      const res = await fetch(url);
+
+      if (!res.ok) {
+        console.warn("Failed to fetch settings:", res.status);
+        return;
+      }
+
+      const json = await res.json();
+      console.log("✅ Loaded settings:", json);
+
+      if (json?.settings) {
+        setStep1Data(json.settings);
+      }
+    } catch (err) {
+      console.error("Failed to load saved settings:", err);
+    } finally {
+      setLoading(false); // ✅ ALWAYS runs
+    }
+  })();
+}, []);
+
 
   const handleStep1Save = useCallback((data) => {
     console.log("📝 [Step1] Saving:", data);
