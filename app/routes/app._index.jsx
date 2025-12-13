@@ -25,15 +25,6 @@ const MOCK_CHECKBOX_DATA = [
   { code: "AUD_1", label: "AUD - Australian Dollar", actualCode: "AUD" },
 ];
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
-  const shop = url.searchParams.get("shop") || "unknown-shop";
-
-  return {
-    shop,
-  };
-}
-
 // =========================================================================
 // STEP 1: CURRENCY SELECTOR COMPONENT
 // =========================================================================
