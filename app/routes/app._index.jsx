@@ -683,12 +683,12 @@ const { shop } = useLoaderData();
         return;
       }
 
-      const json = await res.json();
-      console.log("✅ Loaded settings:", json);
+     const json = await res.json();
+console.log("✅ Loaded settings:", json);
 
-      if (json?.settings) {
-        setStep1Data(json.settings);
-      }
+// API returns settings directly
+setStep1Data(json);
+
     } catch (err) {
       console.error("Failed to load saved settings:", err);
     } finally {
