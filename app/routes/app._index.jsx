@@ -720,11 +720,17 @@ setStep1Data(json);
       console.log("📝 [Step2] Sending to /api/settings:", payloadForBackend);
 
       try {
-        const res = await fetch("/api/settings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadForBackend),
-        });
+        const res = await fetch("/api/merchant-settings", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    shop,
+    currencies: step1Data.selectedCurrencies,
+    defaultCurrency: step1Data.defaultCurrency,
+    placement: data.placement,
+  }),
+});
+
 
         const text = await res.text();
         console.log("📝 [Step2] Response status:", res.status);
