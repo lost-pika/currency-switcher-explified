@@ -1,4 +1,3 @@
-
 import { PrismaClient } from "@prisma/client";
 
 if (process.env.NODE_ENV !== "production") {
@@ -8,4 +7,6 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const prisma = global.prismaGlobal ?? new PrismaClient();
+
 export default prisma;
+export { prisma };
