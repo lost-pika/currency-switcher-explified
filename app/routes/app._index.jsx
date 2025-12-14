@@ -647,6 +647,8 @@ function ConfirmationScreen({ onReview }) {
 // MAIN EXPORT - React Router v7 Compatible
 // =========================================================================
 export default function SettingsRoute() {
+  const API_BASE_URL = "https://currency-switcher-explified.vercel.app";
+
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({
     selectedCurrencies: [],
@@ -676,8 +678,7 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        // ✅ Use absolute URL to backend
-        const apiUrl = `https://currency-switcher-explified.vercel.app/api/merchant-settings?shop=${encodeURIComponent(
+        const apiUrl = `${API_BASE_URL}/api/merchant-settings?shop=${encodeURIComponent(
           shop
         )}`;
         console.log("🌐 Fetching from:", apiUrl);
@@ -705,7 +706,6 @@ export default function SettingsRoute() {
         setStep1Data(json);
       } catch (err) {
         console.error("❌ Error loading settings:", err.message);
-        // Use defaults on error
         setStep1Data({
           selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
           defaultCurrency: "INR",
@@ -736,14 +736,16 @@ export default function SettingsRoute() {
       console.log("📝 [Step2] Sending to backend:", payload);
 
       try {
-        const res = await fetch(
-          "https://currency-switcher-explified.vercel.app/api/merchant-settings",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
-        );
+        const apiUrl = `${API_BASE_URL}/api/merchant-settings`;
+        console.log("🌐 POST to:", apiUrl);
+
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
 
         const text = await res.text();
         console.log("📝 [Step2] Response status:", res.status);
@@ -765,7 +767,6 @@ export default function SettingsRoute() {
     [step1Data, shop]
   );
 
-  // ✅ Show loading state while fetching initial data
   if (loading) {
     return (
       <div className="p-6 text-center">
@@ -781,7 +782,6 @@ export default function SettingsRoute() {
     );
   }
 
-  // ✅ Step 1: Currency Selection
   if (step === 1) {
     return (
       <CurrencySelector
@@ -792,7 +792,6 @@ export default function SettingsRoute() {
     );
   }
 
-  // ✅ Step 2: Placement Configuration
   if (step === 2) {
     return (
       <PlacementSelector
@@ -808,7 +807,6 @@ export default function SettingsRoute() {
     );
   }
 
-  // ✅ Step 3: Confirmation
   if (step === 3) {
     return <ConfirmationScreen onReview={() => setStep(1)} />;
   }
