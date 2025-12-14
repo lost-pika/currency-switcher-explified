@@ -689,7 +689,7 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl = `${API_BASE_URL}/api/merchant-settings?shop=${encodeURIComponent(
+        const apiUrl = `/api/merchant-settings?shop=${encodeURIComponent(
           shop,
         )}`;
         console.log("🌐 Fetching from:", apiUrl);
@@ -752,7 +752,7 @@ export default function SettingsRoute() {
     console.log("📝 [Step2] Sending to backend:", payload);
 
     try {
-      const apiUrl = `${API_BASE_URL}/api/merchant-settings`;
+      const apiUrl = `/api/merchant-settings`;
       const res = await fetch(apiUrl, {
         method: "POST",
         headers: {
