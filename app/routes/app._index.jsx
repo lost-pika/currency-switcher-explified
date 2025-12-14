@@ -804,17 +804,40 @@ export default function SettingsRoute() {
   }
 
   if (step === 2) {
+    const normalizePlacementForUI = (placement) => {
+  if (
+    ["top-left", "top-right", "bottom-left", "bottom-right"].includes(placement)
+  ) {
+    return "Fixed Position";
+  }
+  if (placement === "inline") {
+    return "Inline with the header";
+  }
+  if (placement === "hidden") {
+    return "Don't show at all";
+  }
+  return "Fixed Position";
+};
+
     return (
       <PlacementSelector
-        onBack={() => setStep(1)}
-        onSave={handleStep2Save}
-        initialPlacement={step1Data.placement || "Fixed Position"}
-        initialFixedCorner={step1Data.fixedCorner || "bottom-left"}
-        initialDistanceTop={step1Data.distanceTop ?? 16}
-        initialDistanceRight={step1Data.distanceRight ?? 16}
-        initialDistanceBottom={step1Data.distanceBottom ?? 16}
-        initialDistanceLeft={step1Data.distanceLeft ?? 16}
-      />
+  onBack={() => setStep(1)}
+  onSave={handleStep2Save}
+  initialPlacement={normalizePlacementForUI(step1Data.placement)}
+  initialFixedCorner={
+    step1Data.fixedCorner ||
+    (["top-left", "top-right", "bottom-left", "bottom-right"].includes(
+      step1Data.placement
+    )
+      ? step1Data.placement
+      : "bottom-left")
+  }
+  initialDistanceTop={step1Data.distanceTop ?? 16}
+  initialDistanceRight={step1Data.distanceRight ?? 16}
+  initialDistanceBottom={step1Data.distanceBottom ?? 16}
+  initialDistanceLeft={step1Data.distanceLeft ?? 16}
+/>
+
     );
   }
 

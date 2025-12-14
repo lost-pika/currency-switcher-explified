@@ -26,10 +26,19 @@ export async function loader({ request }) {
     where: { shop },
   });
 
-  // 👇 IMPORTANT: Always return SAME SHAPE
-  return new Response(
-    JSON.stringify(
-      row || {
+  const response = row
+    ? {
+        selectedCurrencies: row.selectedCurrencies,
+        defaultCurrency: row.defaultCurrency,
+        baseCurrency: row.baseCurrency || "USD",
+        placement: row.placement || "bottom-right",
+        fixedCorner: row.fixedCorner || "bottom-left",
+        distanceTop: row.distanceTop ?? 16,
+        distanceRight: row.distanceRight ?? 16,
+        distanceBottom: row.distanceBottom ?? 16,
+        distanceLeft: row.distanceLeft ?? 16,
+      }
+    : {
         selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
         defaultCurrency: "INR",
         baseCurrency: "USD",
@@ -39,11 +48,10 @@ export async function loader({ request }) {
         distanceRight: 16,
         distanceBottom: 16,
         distanceLeft: 16,
-      }
-    ),
-    { headers: corsHeaders }
-  );
-}
+      };
+
+  return new Response(JSON.stringify(response), { headers: corsHeaders });
+} // ✅ THIS WAS MISSING
 
 export async function action({ request }) {
   if (request.method === "OPTIONS") {
