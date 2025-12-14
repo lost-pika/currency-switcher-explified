@@ -331,23 +331,22 @@ function PlacementSelector({
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
   const handleSave = async () => {
-  setIsSaving(true);
-  try {
-    await onSave({
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    });
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setIsSaving(false);
-  }
-};
-
+    setIsSaving(true);
+    try {
+      await onSave({
+        placement,
+        fixedCorner,
+        distanceTop,
+        distanceRight,
+        distanceBottom,
+        distanceLeft,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
@@ -689,12 +688,10 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl = `/api/merchant-settings?shop=${encodeURIComponent(
-          shop,
-        )}`;
+        const apiUrl = `${API_BASE_URL}/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
         console.log("🌐 Fetching from:", apiUrl);
 
-        const res = await fetch(apiUrl);
+        const res = await fetch(apiUrl, { credentials: "omit" });
 
         if (!res.ok) {
           console.warn(
@@ -736,48 +733,45 @@ export default function SettingsRoute() {
   }, []);
 
   const handleStep2Save = useCallback(
-  async (data) => {
-    const normalizedPlacement =
-      data.placement === "Fixed Position"
-        ? data.fixedCorner
-        : data.placement;
+    async (data) => {
+      const normalizedPlacement =
+        data.placement === "Fixed Position" ? data.fixedCorner : data.placement;
 
-    const payload = {
-      shop,
-      currencies: step1Data.selectedCurrencies,
-      defaultCurrency: step1Data.defaultCurrency,
-      placement: normalizedPlacement,
-    };
+      const payload = {
+        shop,
+        currencies: step1Data.selectedCurrencies,
+        defaultCurrency: step1Data.defaultCurrency,
+        placement: normalizedPlacement,
+      };
 
-    console.log("📝 [Step2] Sending to backend:", payload);
+      console.log("📝 [Step2] Sending to backend:", payload);
 
-    try {
-      const apiUrl = `/api/merchant-settings`;
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      try {
+        const apiUrl = `${API_BASE_URL}/api/merchant-settings`;
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
 
-      const text = await res.text();
-      console.log("📝 [Step2] Response:", res.status, text);
+        const text = await res.text();
+        console.log("📝 [Step2] Response:", res.status, text);
 
-      if (!res.ok) {
-        throw new Error(text || `Save failed: ${res.status}`);
+        if (!res.ok) {
+          throw new Error(text || `Save failed: ${res.status}`);
+        }
+
+        console.log("✅ [Step2] Settings saved successfully");
+        setStep(3);
+      } catch (err) {
+        console.error("❌ [Step2] Error saving settings:", err);
+        alert("Failed to save settings");
       }
-
-      console.log("✅ [Step2] Settings saved successfully");
-      setStep(3);
-    } catch (err) {
-      console.error("❌ [Step2] Error saving settings:", err);
-      alert("Failed to save settings");
-    }
-  },
-  [step1Data, shop]
-);
-
+    },
+    [step1Data, shop],
+  );
 
   if (loading) {
     return (
