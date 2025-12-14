@@ -1,19 +1,28 @@
-import prisma from "../db.server.js";
+import prisma from "../db.server";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "https://admin.shopify.com",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
+};
 
 export async function loader({ request }) {
-  console.log("📝 [LOADER] Route hit:", request.url);
 
-  // Handle CORS
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "https://admin.shopify.com",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Content-Type": "application/json",
-  };
-
-  // Handle preflight
+    console.log("📝 [LOADER] Route hit:", request.url);
+  
+  // Handle CORS preflight
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response(null, { 
+      status: 204, 
+      headers: CORS_HEADERS 
+    });
+  }
+  console.log("📝 [LOADER] Route hit:", request.url);
+  
+  // Handle CORS preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   const url = new URL(request.url);
@@ -24,7 +33,7 @@ export async function loader({ request }) {
   if (!shop) {
     return new Response(JSON.stringify({ error: "Shop not provided" }), {
       status: 400,
-      headers: corsHeaders,
+      headers: CORS_HEADERS,
     });
   }
 
@@ -38,8 +47,8 @@ export async function loader({ request }) {
 
     if (saved) {
       const settings = {
-        selectedCurrencies: Array.isArray(saved.selectedCurrencies)
-          ? saved.selectedCurrencies
+        selectedCurrencies: Array.isArray(saved.selectedCurrencies) 
+          ? saved.selectedCurrencies 
           : JSON.parse(saved.selectedCurrencies || "[]"),
         defaultCurrency: saved.defaultCurrency,
         baseCurrency: saved.baseCurrency || "USD",
@@ -48,7 +57,7 @@ export async function loader({ request }) {
       console.log("✅ [LOADER] Returning saved settings:", settings);
       return new Response(JSON.stringify(settings), {
         status: 200,
-        headers: corsHeaders,
+        headers: CORS_HEADERS,
       });
     }
 
@@ -61,36 +70,39 @@ export async function loader({ request }) {
     console.log("📝 [LOADER] No saved data, returning defaults");
     return new Response(JSON.stringify(defaults), {
       status: 200,
-      headers: corsHeaders,
+      headers: CORS_HEADERS,
     });
   } catch (error) {
     console.error("❌ [LOADER] Error:", error.message, error.stack);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: corsHeaders,
+      headers: CORS_HEADERS,
     });
   }
 }
 
 export async function action({ request }) {
-  console.log("📝 [ACTION] Route hit:", request.method);
 
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "https://admin.shopify.com",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Content-Type": "application/json",
-  };
-
-  // Handle preflight
+    console.log("📝 [ACTION] Route hit:", request.method);
+  
+  // Handle CORS preflight
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response(null, { 
+      status: 204, 
+      headers: CORS_HEADERS 
+    });
+  }
+  console.log("📝 [ACTION] Route hit:", request.method);
+  
+  // Handle CORS preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: corsHeaders,
+      headers: CORS_HEADERS,
     });
   }
 
@@ -104,7 +116,7 @@ export async function action({ request }) {
       console.error("❌ [ACTION] Missing required fields");
       return new Response(JSON.stringify({ error: "Missing fields" }), {
         status: 400,
-        headers: corsHeaders,
+        headers: CORS_HEADERS,
       });
     }
 
@@ -130,13 +142,13 @@ export async function action({ request }) {
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: corsHeaders,
+      headers: CORS_HEADERS,
     });
   } catch (error) {
     console.error("❌ [ACTION] Error:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: corsHeaders,
+      headers: CORS_HEADERS,
     });
   }
 }
