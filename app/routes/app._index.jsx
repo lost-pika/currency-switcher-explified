@@ -649,7 +649,7 @@ function ConfirmationScreen({ onReview }) {
 // MAIN EXPORT - React Router v7 Compatible
 // =========================================================================
 export default function SettingsRoute() {
-  const API_BASE_URL = "https://currency-switcher-explified.vercel.app";
+  // const API_BASE_URL = "https://currency-switcher-explified.vercel.app";
 
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({
@@ -688,7 +688,7 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl = `${API_BASE_URL}/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
+        const apiUrl = `/apps/currency-switcher/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
         console.log("🌐 Fetching from:", apiUrl);
 
         const res = await fetch(apiUrl, { credentials: "omit" });
@@ -756,15 +756,16 @@ export default function SettingsRoute() {
     console.log("📝 [Step2] Sending to backend:", payload);
 
     const res = await fetch(
-      "https://currency-switcher-explified.vercel.app/api/merchant-settings",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+  "/apps/currency-switcher/api/merchant-settings",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  }
+);
+
 
     const text = await res.text();
     console.log("📝 [Step2] Response:", res.status, text);
