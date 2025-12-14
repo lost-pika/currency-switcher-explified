@@ -740,11 +740,18 @@ export default function SettingsRoute() {
         : data.placement;
 
     const payload = {
-      shop,
-      currencies: step1Data.selectedCurrencies,
-      defaultCurrency: step1Data.defaultCurrency,
-      placement: normalizedPlacement,
-    };
+  shop,
+  currencies: step1Data.selectedCurrencies,
+  defaultCurrency: step1Data.defaultCurrency,
+  baseCurrency: "USD",
+  placement: normalizedPlacement,
+  fixedCorner: data.fixedCorner,
+  distanceTop: data.distanceTop,
+  distanceRight: data.distanceRight,
+  distanceBottom: data.distanceBottom,
+  distanceLeft: data.distanceLeft,
+};
+
 
     console.log("📝 [Step2] Sending to backend:", payload);
 

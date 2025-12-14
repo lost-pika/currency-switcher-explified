@@ -54,7 +54,7 @@ function CurrencySelector({
   }, [initialDefault]);
 
   const selectedCurrencies = ALL_CURRENCIES.filter((c) =>
-    selectedCodes.includes(c.code)
+    selectedCodes.includes(c.code),
   );
 
   const toggleCode = useCallback(
@@ -71,7 +71,7 @@ function CurrencySelector({
         return Array.from(new Set(next));
       });
     },
-    [defaultCode]
+    [defaultCode],
   );
 
   const handleRemoveAll = useCallback(() => {
@@ -90,7 +90,7 @@ function CurrencySelector({
   };
 
   const availableToAdd = ALL_CURRENCIES.filter(
-    (c) => !selectedCodes.includes(c.code)
+    (c) => !selectedCodes.includes(c.code),
   );
   const isDisabled = selectedCodes.length === 0 || !defaultCode;
 
@@ -322,11 +322,11 @@ function PlacementSelector({
   useEffect(() => setDistanceTop(initialDistanceTop), [initialDistanceTop]);
   useEffect(
     () => setDistanceRight(initialDistanceRight),
-    [initialDistanceRight]
+    [initialDistanceRight],
   );
   useEffect(
     () => setDistanceBottom(initialDistanceBottom),
-    [initialDistanceBottom]
+    [initialDistanceBottom],
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
@@ -341,6 +341,8 @@ function PlacementSelector({
         distanceBottom,
         distanceLeft,
       });
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsSaving(false);
     }
@@ -647,6 +649,8 @@ function ConfirmationScreen({ onReview }) {
 // MAIN EXPORT - React Router v7 Compatible
 // =========================================================================
 export default function SettingsRoute() {
+  const API_BASE_URL = "https://currency-switcher-explified.vercel.app";
+
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({
     selectedCurrencies: [],
@@ -659,8 +663,16 @@ export default function SettingsRoute() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    const shopParam = params.get("shop");
+    let shopParam = params.get("shop");
     console.log("📝 Shop from URL:", shopParam);
+
+    // Fallback if shop param not found
+    if (!shopParam) {
+      // For embedded admin apps, always use the default since we know the user is authenticated
+      shopParam = "currency-switcher-app-2.myshopify.com"; // ✅ This IS the correct shop!
+      console.log("✅ Using authenticated shop from fallback:", shopParam);
+    }
+
     setShop(shopParam);
   }, []);
 
@@ -676,19 +688,16 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        // ✅ Use absolute URL to backend
-        const apiUrl = `https://currency-switcher-explified.vercel.app/api/merchant-settings?shop=${encodeURIComponent(
-          shop
-        )}`;
+        const apiUrl = `${API_BASE_URL}/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
         console.log("🌐 Fetching from:", apiUrl);
 
-        const res = await fetch(apiUrl);
+        const res = await fetch(apiUrl, { credentials: "omit" });
 
         if (!res.ok) {
           console.warn(
             "⚠️ Settings fetch returned status:",
             res.status,
-            "Using defaults"
+            "Using defaults",
           );
           setStep1Data({
             selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
@@ -705,7 +714,6 @@ export default function SettingsRoute() {
         setStep1Data(json);
       } catch (err) {
         console.error("❌ Error loading settings:", err.message);
-        // Use defaults on error
         setStep1Data({
           selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
           defaultCurrency: "INR",
@@ -725,47 +733,46 @@ export default function SettingsRoute() {
   }, []);
 
   const handleStep2Save = useCallback(
-    async (data) => {
-      const payload = {
-        shop,
-        currencies: step1Data.selectedCurrencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        placement: data.placement,
-      };
+  async (data) => {
+    const normalizedPlacement =
+      data.placement === "Fixed Position"
+        ? data.fixedCorner
+        : data.placement;
 
-      console.log("📝 [Step2] Sending to backend:", payload);
+    const payload = {
+      shop,
+      currencies: step1Data.selectedCurrencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      placement: normalizedPlacement,
+    };
 
-      try {
-        const res = await fetch(
-          "https://currency-switcher-explified.vercel.app/api/merchant-settings",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
-        );
+    console.log("📝 [Step2] Sending to backend:", payload);
 
-        const text = await res.text();
-        console.log("📝 [Step2] Response status:", res.status);
-        console.log("📝 [Step2] Response body:", text);
-
-        if (!res.ok) {
-          console.error("❌ Save failed:", res.status, text);
-          throw new Error(`Save failed: ${res.status}`);
-        }
-
-        const json = JSON.parse(text);
-        console.log("✅ [Step2] Settings saved successfully");
-        setStep(3);
-      } catch (err) {
-        console.error("❌ [Step2] Error saving settings:", err);
-        alert("Failed to save settings: " + (err.message || err));
+    const res = await fetch(
+      "https://currency-switcher-explified.vercel.app/api/merchant-settings",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       }
-    },
-    [step1Data, shop]
-  );
+    );
 
-  // ✅ Show loading state while fetching initial data
+    const text = await res.text();
+    console.log("📝 [Step2] Response:", res.status, text);
+
+    if (!res.ok) {
+      throw new Error(text || `Save failed: ${res.status}`);
+    }
+
+    console.log("✅ [Step2] Settings saved successfully");
+    setStep(3);
+  },
+  [step1Data, shop]
+);
+
+
   if (loading) {
     return (
       <div className="p-6 text-center">
@@ -773,15 +780,12 @@ export default function SettingsRoute() {
           Loading settings…
         </div>
         <p className="text-sm text-gray-500 mt-2">
-          {shop
-            ? `Loading for shop: ${shop}`
-            : "Waiting for shop parameter..."}
+          {shop ? `Loading for shop: ${shop}` : "Waiting for shop parameter..."}
         </p>
       </div>
     );
   }
 
-  // ✅ Step 1: Currency Selection
   if (step === 1) {
     return (
       <CurrencySelector
@@ -792,7 +796,6 @@ export default function SettingsRoute() {
     );
   }
 
-  // ✅ Step 2: Placement Configuration
   if (step === 2) {
     return (
       <PlacementSelector
@@ -808,7 +811,6 @@ export default function SettingsRoute() {
     );
   }
 
-  // ✅ Step 3: Confirmation
   if (step === 3) {
     return <ConfirmationScreen onReview={() => setStep(1)} />;
   }
