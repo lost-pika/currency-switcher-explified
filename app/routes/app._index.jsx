@@ -755,16 +755,16 @@ export default function SettingsRoute() {
 
     console.log("📝 [Step2] Sending to backend:", payload);
 
-    const res = await fetch(
+   const res = await fetch(
   "/apps/currency-switcher/api/merchant-settings",
   {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // 🔥 REQUIRED FOR SHOPIFY ADMIN
     body: JSON.stringify(payload),
   }
 );
+
 
 
     const text = await res.text();
