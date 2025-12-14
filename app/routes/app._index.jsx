@@ -658,13 +658,21 @@ export default function SettingsRoute() {
   const [shop, setShop] = useState(null);
 
   // ✅ Get shop from URL params
-  useEffect(() => {
+    useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    const shopParam = params.get("shop");
+    let shopParam = params.get("shop");
     console.log("📝 Shop from URL:", shopParam);
+    
+    // Fallback if shop param not found
+    if (!shopParam) {
+      shopParam = "currency-switcher-app-2.myshopify.com";
+      console.log("⚠️ No shop in URL, using fallback:", shopParam);
+    }
+    
     setShop(shopParam);
   }, []);
+
 
   // ✅ Load saved settings from backend (only when shop is available)
   useEffect(() => {
