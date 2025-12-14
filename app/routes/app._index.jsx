@@ -54,7 +54,7 @@ function CurrencySelector({
   }, [initialDefault]);
 
   const selectedCurrencies = ALL_CURRENCIES.filter((c) =>
-    selectedCodes.includes(c.code)
+    selectedCodes.includes(c.code),
   );
 
   const toggleCode = useCallback(
@@ -71,7 +71,7 @@ function CurrencySelector({
         return Array.from(new Set(next));
       });
     },
-    [defaultCode]
+    [defaultCode],
   );
 
   const handleRemoveAll = useCallback(() => {
@@ -90,7 +90,7 @@ function CurrencySelector({
   };
 
   const availableToAdd = ALL_CURRENCIES.filter(
-    (c) => !selectedCodes.includes(c.code)
+    (c) => !selectedCodes.includes(c.code),
   );
   const isDisabled = selectedCodes.length === 0 || !defaultCode;
 
@@ -322,29 +322,32 @@ function PlacementSelector({
   useEffect(() => setDistanceTop(initialDistanceTop), [initialDistanceTop]);
   useEffect(
     () => setDistanceRight(initialDistanceRight),
-    [initialDistanceRight]
+    [initialDistanceRight],
   );
   useEffect(
     () => setDistanceBottom(initialDistanceBottom),
-    [initialDistanceBottom]
+    [initialDistanceBottom],
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
   const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSave({
-        placement,
-        fixedCorner,
-        distanceTop,
-        distanceRight,
-        distanceBottom,
-        distanceLeft,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  setIsSaving(true);
+  try {
+    await onSave({
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    });
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setIsSaving(false);
+  }
+};
+
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
@@ -658,23 +661,21 @@ export default function SettingsRoute() {
   const [shop, setShop] = useState(null);
 
   // ✅ Get shop from URL params
-    useEffect(() => {
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     let shopParam = params.get("shop");
     console.log("📝 Shop from URL:", shopParam);
-    
+
     // Fallback if shop param not found
     if (!shopParam) {
-  // For embedded admin apps, always use the default since we know the user is authenticated
-  shopParam = "currency-switcher-app-2.myshopify.com"; // ✅ This IS the correct shop!
-  console.log("✅ Using authenticated shop from fallback:", shopParam);
-}
+      // For embedded admin apps, always use the default since we know the user is authenticated
+      shopParam = "currency-switcher-app-2.myshopify.com"; // ✅ This IS the correct shop!
+      console.log("✅ Using authenticated shop from fallback:", shopParam);
+    }
 
-    
     setShop(shopParam);
   }, []);
-
 
   // ✅ Load saved settings from backend (only when shop is available)
   useEffect(() => {
@@ -689,7 +690,7 @@ export default function SettingsRoute() {
         console.log("📝 Loading settings for shop:", shop);
 
         const apiUrl = `${API_BASE_URL}/api/merchant-settings?shop=${encodeURIComponent(
-          shop
+          shop,
         )}`;
         console.log("🌐 Fetching from:", apiUrl);
 
@@ -699,7 +700,7 @@ export default function SettingsRoute() {
           console.warn(
             "⚠️ Settings fetch returned status:",
             res.status,
-            "Using defaults"
+            "Using defaults",
           );
           setStep1Data({
             selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
@@ -735,47 +736,48 @@ export default function SettingsRoute() {
   }, []);
 
   const handleStep2Save = useCallback(
-    async (data) => {
-      const payload = {
-        shop,
-        currencies: step1Data.selectedCurrencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        placement: data.placement,
-      };
+  async (data) => {
+    const normalizedPlacement =
+      data.placement === "Fixed Position"
+        ? data.fixedCorner
+        : data.placement;
 
-      console.log("📝 [Step2] Sending to backend:", payload);
+    const payload = {
+      shop,
+      currencies: step1Data.selectedCurrencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      placement: normalizedPlacement,
+    };
 
-      try {
-        const apiUrl = `${API_BASE_URL}/api/merchant-settings`;
-        console.log("🌐 POST to:", apiUrl);
+    console.log("📝 [Step2] Sending to backend:", payload);
 
-        const res = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+    try {
+      const apiUrl = `${API_BASE_URL}/api/merchant-settings`;
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-        const text = await res.text();
-        console.log("📝 [Step2] Response status:", res.status);
-        console.log("📝 [Step2] Response body:", text);
+      const text = await res.text();
+      console.log("📝 [Step2] Response:", res.status, text);
 
-        if (!res.ok) {
-          console.error("❌ Save failed:", res.status, text);
-          throw new Error(`Save failed: ${res.status}`);
-        }
-
-        const json = JSON.parse(text);
-        console.log("✅ [Step2] Settings saved successfully");
-        setStep(3);
-      } catch (err) {
-        console.error("❌ [Step2] Error saving settings:", err);
-        alert("Failed to save settings: " + (err.message || err));
+      if (!res.ok) {
+        throw new Error(text || `Save failed: ${res.status}`);
       }
-    },
-    [step1Data, shop]
-  );
+
+      console.log("✅ [Step2] Settings saved successfully");
+      setStep(3);
+    } catch (err) {
+      console.error("❌ [Step2] Error saving settings:", err);
+      alert("Failed to save settings");
+    }
+  },
+  [step1Data, shop]
+);
+
 
   if (loading) {
     return (
@@ -784,9 +786,7 @@ export default function SettingsRoute() {
           Loading settings…
         </div>
         <p className="text-sm text-gray-500 mt-2">
-          {shop
-            ? `Loading for shop: ${shop}`
-            : "Waiting for shop parameter..."}
+          {shop ? `Loading for shop: ${shop}` : "Waiting for shop parameter..."}
         </p>
       </div>
     );
