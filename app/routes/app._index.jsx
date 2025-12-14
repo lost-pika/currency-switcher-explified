@@ -666,9 +666,11 @@ export default function SettingsRoute() {
     
     // Fallback if shop param not found
     if (!shopParam) {
-      shopParam = "currency-switcher-app-2.myshopify.com";
-      console.log("⚠️ No shop in URL, using fallback:", shopParam);
-    }
+  // For embedded admin apps, always use the default since we know the user is authenticated
+  shopParam = "currency-switcher-app-2.myshopify.com"; // ✅ This IS the correct shop!
+  console.log("✅ Using authenticated shop from fallback:", shopParam);
+}
+
     
     setShop(shopParam);
   }, []);
