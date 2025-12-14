@@ -24,6 +24,9 @@ const MOCK_CHECKBOX_DATA = [
   { code: "AUD_1", label: "AUD - Australian Dollar", actualCode: "AUD" },
 ];
 
+// =========================================================================
+// STEP 1: CURRENCY SELECTOR COMPONENT
+// =========================================================================
 function CurrencySelector({
   onNext,
   initialSelected = DEFAULT_SELECTED,
@@ -287,6 +290,9 @@ function CurrencySelector({
   );
 }
 
+// =========================================================================
+// STEP 2: PLACEMENT SELECTOR COMPONENT
+// =========================================================================
 function PlacementSelector({
   onBack,
   onSave,
@@ -370,7 +376,10 @@ function PlacementSelector({
 
   const CornerCheckbox = ({ corner, initialPosition }) => {
     const isChecked = isCornerChecked(corner);
-    const dynamicStyle = isChecked ? getCornerDistance(corner) : initialPosition;
+
+    const dynamicStyle = isChecked
+      ? getCornerDistance(corner)
+      : initialPosition;
 
     const handleClick = (e) => {
       e.preventDefault();
@@ -604,6 +613,9 @@ function PlacementSelector({
   );
 }
 
+// =========================================================================
+// STEP 3: CONFIRMATION COMPONENT
+// =========================================================================
 function ConfirmationScreen({ onReview }) {
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans flex justify-center items-center h-screen flex-col">
@@ -631,6 +643,9 @@ function ConfirmationScreen({ onReview }) {
   );
 }
 
+// =========================================================================
+// MAIN EXPORT - React Router v7 Compatible
+// =========================================================================
 export default function SettingsRoute() {
   const API_BASE_URL = "https://currency-switcher-explified.vercel.app";
 
@@ -642,74 +657,40 @@ export default function SettingsRoute() {
   const [loading, setLoading] = useState(true);
   const [shop, setShop] = useState(null);
 
-  // ✅ Get shop from Shopify embedded app context
+  // ✅ Get shop from URL params
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    // Debug: Log all available context
-    console.log("🔍 DEBUG - window.location.search:", window.location.search);
-    console.log("🔍 DEBUG - window.location.pathname:", window.location.pathname);
-    console.log("🔍 DEBUG - window.location.hostname:", window.location.hostname);
-    console.log("🔍 DEBUG - window.Shopify:", window.Shopify);
-
-    let shopParam = null;
-
-    // Method 1: Check URL search params
     const params = new URLSearchParams(window.location.search);
-    shopParam = params.get("shop");
-    if (shopParam) {
-      console.log("✅ Shop found from search params:", shopParam);
-      setShop(shopParam);
-      return;
-    }
-
-    // Method 2: Check for Shopify app bridge
-    if (window.Shopify?.app?.shop) {
-      shopParam = window.Shopify.app.shop;
-      console.log("✅ Shop found from Shopify bridge:", shopParam);
-      setShop(shopParam);
-      return;
-    }
-
-    // Method 3: Extract from pathname (admin apps use /admin/apps/{appId}/...)
-    const pathMatch = window.location.pathname.match(/admin\/apps\/[^/]+/);
-    if (pathMatch) {
-      console.log("🔍 Admin app path detected:", pathMatch[0]);
-      // For admin apps, shop is usually in the Shopify context
-      // But as fallback, try to get it from parent window
-      if (window.parent !== window) {
-        console.log("🔍 Running in iframe, checking parent...");
-      }
-    }
-
-    // Fallback: If still no shop, use the store from your test environment
-    const fallbackShop = "currency-switcher-app-2.myshopify.com";
-    console.log("⚠️ Could not determine shop from URL, using fallback:", fallbackShop);
-    setShop(fallbackShop);
+    const shopParam = params.get("shop");
+    console.log("📝 Shop from URL:", shopParam);
+    setShop(shopParam);
   }, []);
 
-  // ✅ Load saved settings from backend
+  // ✅ Load saved settings from backend (only when shop is available)
   useEffect(() => {
     if (!shop) {
-      console.warn("⚠️ No shop param available, waiting...");
+      console.warn("⚠️ No shop param available");
+      setLoading(false);
       return;
     }
-
-    console.log("📝 [LOAD] Starting settings load for shop:", shop);
-    setLoading(true);
 
     (async () => {
       try {
+        console.log("📝 Loading settings for shop:", shop);
+
         const apiUrl = `${API_BASE_URL}/api/merchant-settings?shop=${encodeURIComponent(
           shop
         )}`;
-        console.log("🌐 [LOAD] GET from:", apiUrl);
+        console.log("🌐 Fetching from:", apiUrl);
 
         const res = await fetch(apiUrl);
-        console.log("📝 [LOAD] Response status:", res.status);
 
         if (!res.ok) {
-          console.warn("⚠️ [LOAD] Settings fetch failed, using defaults");
+          console.warn(
+            "⚠️ Settings fetch returned status:",
+            res.status,
+            "Using defaults"
+          );
           setStep1Data({
             selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
             defaultCurrency: "INR",
@@ -721,10 +702,10 @@ export default function SettingsRoute() {
         }
 
         const json = await res.json();
-        console.log("✅ [LOAD] Settings loaded:", json);
+        console.log("✅ Settings loaded:", json);
         setStep1Data(json);
       } catch (err) {
-        console.error("❌ [LOAD] Error:", err.message);
+        console.error("❌ Error loading settings:", err.message);
         setStep1Data({
           selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
           defaultCurrency: "INR",
@@ -738,19 +719,13 @@ export default function SettingsRoute() {
   }, [shop]);
 
   const handleStep1Save = useCallback((data) => {
-    console.log("💾 [Step1] Saving:", data);
+    console.log("📝 [Step1] Saving:", data);
     setStep1Data((prev) => ({ ...prev, ...data }));
     setStep(2);
   }, []);
 
   const handleStep2Save = useCallback(
     async (data) => {
-      if (!shop) {
-        console.error("❌ [Step2] No shop available");
-        alert("Error: Shop not determined");
-        return;
-      }
-
       const payload = {
         shop,
         currencies: step1Data.selectedCurrencies,
@@ -758,11 +733,11 @@ export default function SettingsRoute() {
         placement: data.placement,
       };
 
-      console.log("📝 [Step2] Payload:", payload);
+      console.log("📝 [Step2] Sending to backend:", payload);
 
       try {
         const apiUrl = `${API_BASE_URL}/api/merchant-settings`;
-        console.log("🌐 [Step2] POST to:", apiUrl);
+        console.log("🌐 POST to:", apiUrl);
 
         const res = await fetch(apiUrl, {
           method: "POST",
@@ -772,19 +747,21 @@ export default function SettingsRoute() {
           body: JSON.stringify(payload),
         });
 
-        console.log("📝 [Step2] Response status:", res.status);
         const text = await res.text();
+        console.log("📝 [Step2] Response status:", res.status);
         console.log("📝 [Step2] Response body:", text);
 
         if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${text}`);
+          console.error("❌ Save failed:", res.status, text);
+          throw new Error(`Save failed: ${res.status}`);
         }
 
-        console.log("✅ [Step2] Settings saved successfully!");
+        const json = JSON.parse(text);
+        console.log("✅ [Step2] Settings saved successfully");
         setStep(3);
       } catch (err) {
-        console.error("❌ [Step2] Error:", err.message);
-        alert("Failed to save: " + err.message);
+        console.error("❌ [Step2] Error saving settings:", err);
+        alert("Failed to save settings: " + (err.message || err));
       }
     },
     [step1Data, shop]
@@ -796,7 +773,11 @@ export default function SettingsRoute() {
         <div className="text-lg font-semibold text-gray-700">
           Loading settings…
         </div>
-        <p className="text-sm text-gray-500 mt-2">Shop: {shop || "detecting..."}</p>
+        <p className="text-sm text-gray-500 mt-2">
+          {shop
+            ? `Loading for shop: ${shop}`
+            : "Waiting for shop parameter..."}
+        </p>
       </div>
     );
   }
