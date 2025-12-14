@@ -733,45 +733,45 @@ export default function SettingsRoute() {
   }, []);
 
   const handleStep2Save = useCallback(
-    async (data) => {
-      const normalizedPlacement =
-        data.placement === "Fixed Position" ? data.fixedCorner : data.placement;
+  async (data) => {
+    const normalizedPlacement =
+      data.placement === "Fixed Position"
+        ? data.fixedCorner
+        : data.placement;
 
-      const payload = {
-        shop,
-        currencies: step1Data.selectedCurrencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        placement: normalizedPlacement,
-      };
+    const payload = {
+      shop,
+      currencies: step1Data.selectedCurrencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      placement: normalizedPlacement,
+    };
 
-      console.log("📝 [Step2] Sending to backend:", payload);
+    console.log("📝 [Step2] Sending to backend:", payload);
 
-      try {
-        const apiUrl = `${API_BASE_URL}/api/merchant-settings`;
-        const res = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const text = await res.text();
-        console.log("📝 [Step2] Response:", res.status, text);
-
-        if (!res.ok) {
-          throw new Error(text || `Save failed: ${res.status}`);
-        }
-
-        console.log("✅ [Step2] Settings saved successfully");
-        setStep(3);
-      } catch (err) {
-        console.error("❌ [Step2] Error saving settings:", err);
-        alert("Failed to save settings");
+    const res = await fetch(
+      "https://currency-switcher-explified.vercel.app/api/merchant-settings",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       }
-    },
-    [step1Data, shop],
-  );
+    );
+
+    const text = await res.text();
+    console.log("📝 [Step2] Response:", res.status, text);
+
+    if (!res.ok) {
+      throw new Error(text || `Save failed: ${res.status}`);
+    }
+
+    console.log("✅ [Step2] Settings saved successfully");
+    setStep(3);
+  },
+  [step1Data, shop]
+);
+
 
   if (loading) {
     return (
