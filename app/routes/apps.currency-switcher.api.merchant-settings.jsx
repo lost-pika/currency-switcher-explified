@@ -1,12 +1,10 @@
-import { json } from "@remix-run/node";
-import { authenticate } from "../../shopify.server";
-import prisma from "../../db.server";
-import { CORS_HEADERS } from "../api.cors-headers"; // adjust import path
+import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
+import { CORS_HEADERS } from "./api.cors-headers";
 
 export async function action({ request }) {
   const method = request.method;
 
-  // Preflight
   if (method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
@@ -34,10 +32,10 @@ export async function action({ request }) {
       } = body;
 
       if (!shop || !currencies || !defaultCurrency) {
-        return json({ error: "Missing required fields" }, {
-          status: 400,
-          headers: CORS_HEADERS,
-        });
+        return new Response(
+          { error: "Missing required fields" },
+          { status: 400, headers: CORS_HEADERS },
+        );
       }
 
       await prisma.merchantSettings.upsert({
@@ -67,7 +65,7 @@ export async function action({ request }) {
         },
       });
 
-      return json({ success: true }, { headers: CORS_HEADERS });
+      return new Response({ success: true }, { headers: CORS_HEADERS });
     }
 
     if (method === "GET") {
@@ -75,19 +73,17 @@ export async function action({ request }) {
       const shop = url.searchParams.get("shop") || sessionShop;
 
       if (!shop) {
-        return json({ error: "Shop not provided" }, {
-          status: 400,
-          headers: CORS_HEADERS,
-        });
+        return new Response(
+          { error: "Shop not provided" },
+          { status: 400, headers: CORS_HEADERS },
+        );
       }
 
       const saved = await prisma.merchantSettings.findUnique({ where: { shop } });
 
-      if (saved) {
-        return json(saved, { headers: CORS_HEADERS });
-      }
+      if (saved) return new Response(saved, { headers: CORS_HEADERS });
 
-      return json(
+      return new Response(
         {
           selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
           defaultCurrency: "INR",
@@ -103,15 +99,15 @@ export async function action({ request }) {
       );
     }
 
-    return json({ error: "Method not allowed" }, {
-      status: 405,
-      headers: CORS_HEADERS,
-    });
+    return new Response(
+      { error: "Method not allowed" },
+      { status: 405, headers: CORS_HEADERS },
+    );
   } catch (err) {
     console.error("merchant-settings error:", err);
-    return json({ error: err.message || "Internal error" }, {
-      status: 500,
-      headers: CORS_HEADERS,
-    });
+    return new Response(
+      { error: err.message || "Internal error" },
+      { status: 500, headers: CORS_HEADERS },
+    );
   }
 }
