@@ -735,62 +735,66 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
-  const handleStep2Save = useCallback(
-    async (data) => {
-      console.log("🔥 handleStep2Save START", data);
-      let normalizedPlacement;
+const handleStep2Save = useCallback(
+  async (data) => {
+    console.log("🔥 handleStep2Save START", data);
 
-      if (data.placement === "Fixed Position") {
-        normalizedPlacement = data.fixedCorner;
-      } else if (data.placement === "Inline with the header") {
-        normalizedPlacement = "inline";
-      } else if (data.placement === "Don't show at all") {
-        normalizedPlacement = "hidden";
+    let normalizedPlacement;
+    if (data.placement === "Fixed Position") {
+      normalizedPlacement = data.fixedCorner;
+    } else if (data.placement === "Inline with the header") {
+      normalizedPlacement = "inline";
+    } else if (data.placement === "Don't show at all") {
+      normalizedPlacement = "hidden";
+    }
+
+    const payload = {
+      shop,
+      currencies: step1Data.selectedCurrencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      baseCurrency: "USD",
+      placement: normalizedPlacement,
+      fixedCorner: data.fixedCorner,
+      distanceTop: data.distanceTop,
+      distanceRight: data.distanceRight,
+      distanceBottom: data.distanceBottom,
+      distanceLeft: data.distanceLeft,
+    };
+
+    console.log("📝 [Step2] Sending to backend:", payload);
+    console.log("URL:", "/apps/currency-switcher/api/merchant-settings");
+
+    try {
+      // EXTRA GUARD: verify fetch exists
+      if (typeof fetch !== "function") {
+        throw new Error("window.fetch is not available in this context");
       }
 
-      const payload = {
-        shop,
-        currencies: step1Data.selectedCurrencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        baseCurrency: "USD",
-        placement: normalizedPlacement,
-        fixedCorner: data.fixedCorner,
-        distanceTop: data.distanceTop,
-        distanceRight: data.distanceRight,
-        distanceBottom: data.distanceBottom,
-        distanceLeft: data.distanceLeft,
-      };
+      const res = await fetch("/apps/currency-switcher/api/merchant-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
+        body: JSON.stringify(payload),
+      });
 
-      console.log("📝 [Step2] Sending to backend:", payload);
-      console.log("URL:", "/apps/currency-switcher/api/merchant-settings");
+      console.log("📝 [Step2] Got response object:", res);
 
-      try {
-        const res = await fetch(
-          "/apps/currency-switcher/api/merchant-settings",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "omit", // ← CHANGE from "include"
-            body: JSON.stringify(payload),
-          },
-        );
+      const text = await res.text();
+      console.log("📝 [Step2] Response text:", res.status, text);
 
-        const text = await res.text();
-        console.log("📝 [Step2] Response:", res.status, text);
-
-        if (!res.ok) {
-          throw new Error(text || `Save failed: ${res.status}`);
-        }
-
-        console.log("✅ [Step2] Settings saved successfully");
-        setStep(3);
-      } catch (err) {
-        console.error("❌ [Step2] Error saving settings:", err.message);
-        alert(`Failed to save settings: ${err.message}`);
+      if (!res.ok) {
+        throw new Error(text || `Save failed: ${res.status}`);
       }
-    },
-    [step1Data, shop],
-  );
+
+      console.log("✅ [Step2] Settings saved successfully");
+      setStep(3);
+    } catch (err) {
+      console.error("❌ [Step2] Error saving settings (outer):", err);
+      alert(`Failed to save settings: ${err?.message || err}`);
+    }
+  },
+  [step1Data, shop],
+);
 
   if (loading) {
     return (
