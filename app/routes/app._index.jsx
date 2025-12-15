@@ -734,10 +734,16 @@ export default function SettingsRoute() {
 
   const handleStep2Save = useCallback(
   async (data) => {
-    const normalizedPlacement =
-      data.placement === "Fixed Position"
-        ? data.fixedCorner
-        : data.placement;
+    let normalizedPlacement;
+
+if (data.placement === "Fixed Position") {
+  normalizedPlacement = data.fixedCorner; // top-right etc
+} else if (data.placement === "Inline with the header") {
+  normalizedPlacement = "inline";
+} else if (data.placement === "Don't show at all") {
+  normalizedPlacement = "hidden";
+}
+
 
     const payload = {
   shop,
