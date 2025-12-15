@@ -87,7 +87,10 @@
     const cached = sget(key);
     if (cached) return cached;
 
-    const url = `${appOrigin()}/apps/currency-switcher/api/rates?base=${base}&symbols=${targets.join(",")}`;
+    // ✅ OPTION A: CALL REMIX ROUTE /app/api/rates
+    const url = `${appOrigin()}/app/api/rates?base=${base}&symbols=${targets.join(
+      ",",
+    )}`;
     const r = await fetch(url);
     if (!r.ok) return null;
 
@@ -102,10 +105,11 @@
     try {
       const shop =
         window.__MLV_SHOP__ ||
-        Shopify?.shop ||
+        (window.Shopify && window.Shopify.shop) ||
         window.location.hostname;
 
-      const url = `${appOrigin()}/apps/currency-switcher/api/merchant-settings?shop=${encodeURIComponent(
+      // ✅ OPTION A: CALL REMIX ROUTE /app/api/merchant-settings
+      const url = `${appOrigin()}/app/api/merchant-settings?shop=${encodeURIComponent(
         shop,
       )}`;
 
@@ -151,7 +155,7 @@
   font-family:system-ui;
 }
 #${PICK} button{
-  padding:8px 28px 8px 12px; /* ⬅️ GAP BETWEEN TEXT & ARROW */
+  padding:8px 28px 8px 12px;
   border-radius:10px;
   border:1px solid rgba(0,0,0,.15);
   background:#fff;
@@ -191,7 +195,7 @@
   /* ================= PICKER ================= */
 
   function applyPlacement(el, st) {
-    const corner = st?.fixedCorner || "top-right"; // ✅ DEFAULT FIX
+    const corner = st?.fixedCorner || "top-right";
     const t = st?.distanceTop ?? 16;
     const r = st?.distanceRight ?? 16;
     const b = st?.distanceBottom ?? 16;
@@ -229,11 +233,11 @@
 
     b.onclick = (e) => {
       e.stopPropagation();
-      const r = b.getBoundingClientRect();
+      const rct = b.getBoundingClientRect();
       m.style.display = "block";
-      m.style.left = `${r.left}px`;
-      m.style.top = `${r.bottom + 8}px`;
-      m.style.minWidth = `${r.width}px`;
+      m.style.left = `${rct.left}px`;
+      m.style.top = `${rct.bottom + 8}px`;
+      m.style.minWidth = `${rct.width}px`;
     };
 
     document.addEventListener("click", () => (m.style.display = "none"));

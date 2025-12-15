@@ -1,4 +1,4 @@
-// app/routes/api.rates.jsx
+
 export async function options() {
   return new Response(null, {
     status: 204,
