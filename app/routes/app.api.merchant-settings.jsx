@@ -14,6 +14,7 @@ function jsonResponse(body, status = 200) {
 export async function action({ request }) {
   const method = request.method;
 
+  // CORS preflight support (optional but safe)
   if (method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -28,6 +29,7 @@ export async function action({ request }) {
   try {
     const defaultShop = "currency-switcher-app-2.myshopify.com";
 
+    // =================== POST: SAVE SETTINGS ===================
     if (method === "POST") {
       const body = await request.json();
 
@@ -35,7 +37,7 @@ export async function action({ request }) {
 
       const {
         shop = defaultShop,
-        currencies = [],           // ✅ EXPECTS THIS KEY
+        currencies = [],
         defaultCurrency = "USD",
         baseCurrency = "USD",
         placement = "Fixed Position",
@@ -50,19 +52,21 @@ export async function action({ request }) {
         shop,
         currencies,
         defaultCurrency,
+        placement,
+        fixedCorner,
       });
 
-      // ✅ VALIDATION (Clear error messages)
+      // Validation
       if (!shop || !Array.isArray(currencies) || currencies.length === 0) {
         console.error("❌ [API POST] Validation failed:", {
           shop: shop || "MISSING",
-          currencies: currencies || "NOT_ARRAY",
-          length: currencies?.length || 0,
+          currencies,
         });
         return jsonResponse(
           {
             ok: false,
-            error: "Missing required fields: shop, currencies (array)",
+            error:
+              "Missing required fields: shop and currencies (non-empty array) are required",
           },
           400,
         );
@@ -76,9 +80,8 @@ export async function action({ request }) {
         );
       }
 
-      console.log("✅ [API POST] Validation passed, saving to DB...");
+      console.log("✅ [API POST] Validation passed, saving to DB…");
 
-      // ✅ UPSERT TO DB
       const saved = await prisma.merchantSettings.upsert({
         where: { shop },
         update: {
@@ -118,6 +121,7 @@ export async function action({ request }) {
       );
     }
 
+    // =================== GET: LOAD SETTINGS ===================
     if (method === "GET") {
       const url = new URL(request.url);
       const shop = url.searchParams.get("shop") || defaultShop;
@@ -165,13 +169,13 @@ export async function action({ request }) {
       {
         ok: false,
         error: err?.message || "Internal server error",
-        stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
       },
       500,
     );
   }
 }
 
+// React Router v7 loader -> same handler
 export async function loader(args) {
   return action(args);
 }
