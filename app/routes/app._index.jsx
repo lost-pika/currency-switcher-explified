@@ -764,37 +764,29 @@ const handleStep2Save = useCallback(
     console.log("📝 [Step2] Sending to backend:", payload);
     console.log("URL:", "/apps/currency-switcher/api/merchant-settings");
 
-    try {
-      // EXTRA GUARD: verify fetch exists
-      if (typeof fetch !== "function") {
-        throw new Error("window.fetch is not available in this context");
-      }
+    // ❗ No try/catch here
+    const res = await fetch("/apps/currency-switcher/api/merchant-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "omit",
+      body: JSON.stringify(payload),
+    });
 
-      const res = await fetch("/apps/currency-switcher/api/merchant-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "omit",
-        body: JSON.stringify(payload),
-      });
+    console.log("📝 [Step2] Got response object:", res);
 
-      console.log("📝 [Step2] Got response object:", res);
+    const text = await res.text();
+    console.log("📝 [Step2] Response text:", res.status, text);
 
-      const text = await res.text();
-      console.log("📝 [Step2] Response text:", res.status, text);
-
-      if (!res.ok) {
-        throw new Error(text || `Save failed: ${res.status}`);
-      }
-
-      console.log("✅ [Step2] Settings saved successfully");
-      setStep(3);
-    } catch (err) {
-      console.error("❌ [Step2] Error saving settings (outer):", err);
-      alert(`Failed to save settings: ${err?.message || err}`);
+    if (!res.ok) {
+      throw new Error(text || `Save failed: ${res.status}`);
     }
+
+    console.log("✅ [Step2] Settings saved successfully");
+    setStep(3);
   },
   [step1Data, shop],
 );
+
 
   if (loading) {
     return (
