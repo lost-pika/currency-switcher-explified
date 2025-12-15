@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 
+/* -------------------------------------------------
+   CONSTANTS
+------------------------------------------------- */
 const ALL_CURRENCIES = [
   { code: "USD", label: "USD - US Dollar" },
   { code: "EUR", label: "EUR - Euro" },
@@ -24,9 +27,9 @@ const MOCK_CHECKBOX_DATA = [
   { code: "AUD_1", label: "AUD - Australian Dollar", actualCode: "AUD" },
 ];
 
-// =========================================================================
-// STEP 1: CURRENCY SELECTOR COMPONENT
-// =========================================================================
+/* -------------------------------------------------
+   STEP 1: CurrencySelector
+------------------------------------------------- */
 function CurrencySelector({
   onNext,
   initialSelected = DEFAULT_SELECTED,
@@ -81,9 +84,9 @@ function CurrencySelector({
 
   const handleSaveAndNext = () => {
     const dataToSave = {
-  currencies: selectedCodes,
-  defaultCurrency: defaultCode,
-};
+      currencies: selectedCodes,
+      defaultCurrency: defaultCode,
+    };
 
     console.log("💾 [Step1] Data being sent:", dataToSave);
     onNext(dataToSave);
@@ -96,6 +99,7 @@ function CurrencySelector({
 
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans">
+      {/* Header */}
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between gap-5 items-start md:items-end mb-8 px-2">
           <div className="flex flex-col">
@@ -120,6 +124,7 @@ function CurrencySelector({
           </div>
         </div>
 
+        {/* Currency chips & checkboxes */}
         <div className="flex flex-col gap-6">
           <section className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
             <div className="flex justify-between items-start gap-4 mb-4">
@@ -216,7 +221,9 @@ function CurrencySelector({
                             readOnly
                             className="w-4 h-4 accent-teal-500 border-gray-300 rounded"
                           />
-                          <span className="select-none">{currency.label}</span>
+                          <span className="select-none">
+                            {currency.label}
+                          </span>
                         </label>
                       ))
                     )}
@@ -226,10 +233,12 @@ function CurrencySelector({
             </div>
           </section>
 
+          {/* Default currency */}
           <section className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
             <h2 className="text-xl font-semibold">Default Currency</h2>
             <p className="mt-1 text-sm text-gray-500">
-              This currency will be selected by default for your store visitors.
+              This currency will be selected by default for your store
+              visitors.
             </p>
 
             <div className="mt-4 max-w-sm">
@@ -273,6 +282,7 @@ function CurrencySelector({
           </section>
         </div>
 
+        {/* footer buttons */}
         <div className="mt-8 flex justify-end gap-3 bg-gray-50 sticky bottom-0">
           <button className="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors shadow-sm">
             Back
@@ -290,12 +300,9 @@ function CurrencySelector({
   );
 }
 
-// =========================================================================
-// STEP 2: PLACEMENT SELECTOR COMPONENT
-// =========================================================================
-// =========================================================================
-// STEP 2: PLACEMENT SELECTOR COMPONENT
-// =========================================================================
+/* -------------------------------------------------
+   STEP 2: PlacementSelector
+------------------------------------------------- */
 function PlacementSelector({
   onBack,
   onSave,
@@ -314,14 +321,8 @@ function PlacementSelector({
   const [distanceLeft, setDistanceLeft] = useState(initialDistanceLeft);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    setPlacement(initialPlacement);
-  }, [initialPlacement]);
-
-  useEffect(() => {
-    setFixedCorner(initialFixedCorner);
-  }, [initialFixedCorner]);
-
+  useEffect(() => setPlacement(initialPlacement), [initialPlacement]);
+  useEffect(() => setFixedCorner(initialFixedCorner), [initialFixedCorner]);
   useEffect(() => setDistanceTop(initialDistanceTop), [initialDistanceTop]);
   useEffect(
     () => setDistanceRight(initialDistanceRight),
@@ -388,16 +389,13 @@ function PlacementSelector({
 
   const CornerCheckbox = ({ corner, initialPosition }) => {
     const isChecked = isCornerChecked(corner);
-
     const dynamicStyle = isChecked
       ? getCornerDistance(corner)
       : initialPosition;
 
     const handleClick = (e) => {
       e.preventDefault();
-      if (placement !== "Fixed Position") {
-        setPlacement("Fixed Position");
-      }
+      if (placement !== "Fixed Position") setPlacement("Fixed Position");
       setFixedCorner(corner);
     };
 
@@ -480,31 +478,156 @@ function PlacementSelector({
 
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans">
-      {/* ... tumhara baaki JSX jaisa ka taisa ... */}
-      {/* bottom buttons */}
-      <div className="mt-8 flex justify-end gap-3 bg-gray-50 sticky bottom-0">
-        <button
-          className="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors shadow-sm"
-          onClick={onBack}
-        >
-          Back
-        </button>
-        <button
-          className="px-6 py-2.5 rounded-lg border-none bg-teal-500 text-white text-sm font-medium cursor-pointer hover:bg-teal-600 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-          onClick={handleSave}
-          disabled={isSaving}
-        >
-          {isSaving ? "Saving..." : "Save and Next"}
-        </button>
+      <div className="max-w-4xl mx-auto">
+        {/* header */}
+        <div className="flex flex-col md:flex-row justify-between gap-5 items-start md:items-end mb-8 px-2">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1 cursor-pointer">
+              <span className="text-xl">←</span>
+              <span className="hover:underline" onClick={onBack}>
+                Settings
+              </span>
+            </div>
+            <h1 className="text-3xl font-semibold text-gray-800">
+              Auto Currency Converter
+            </h1>
+          </div>
+          <div className="flex items-center gap-3 mt-2 md:mt-0">
+            <span className="text-lg font-medium text-gray-500 whitespace-nowrap">
+              Step 2/2
+            </span>
+            <div className="w-32 h-2 rounded-full bg-gray-300 overflow-hidden">
+              <div
+                className="h-full bg-teal-500 transition-all duration-300"
+                style={{ width: "100%" }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* placement card */}
+        <div className="flex flex-col gap-6">
+          <section className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold">Placement Location</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Choose where the currency selector will appear on your store.
+              </p>
+            </div>
+
+            <div className="mt-4 max-w-lg mx-auto">
+              <div className="relative rounded-lg border border-gray-300 bg-white shadow-sm overflow-hidden">
+                <select
+                  className="w-full border-none outline-none text-sm px-4 py-2.5 bg-transparent appearance-none cursor-pointer text-gray-700"
+                  value={placement}
+                  onChange={(e) => setPlacement(e.target.value)}
+                >
+                  <option value="Fixed Position">Fixed Position</option>
+                  <option value="Inline with the header">
+                    Inline with the header
+                  </option>
+                  <option value="Don't show at all">Don't show at all</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* preview box */}
+            <div className="flex justify-center py-8">
+              <div className="w-full max-w-xs h-60 border-4 border-gray-400 rounded-xl relative bg-white shadow-lg overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1/4 bg-white flex justify-center items-center border-b border-gray-200">
+                  <span className="text-gray-400 text-sm font-semibold">
+                    Store Header Placeholder
+                  </span>
+                </div>
+
+                <div className="absolute top-1/4 left-0 w-full h-3/4 flex justify-center items-center bg-gray-50">
+                  <span className="text-gray-400 text-sm">Store Content</span>
+                </div>
+
+                <CornerCheckbox
+                  corner="top-left"
+                  initialPosition={{ top: 8, left: 8 }}
+                />
+                <CornerCheckbox
+                  corner="top-right"
+                  initialPosition={{ top: 8, right: 8 }}
+                />
+                <CornerCheckbox
+                  corner="bottom-left"
+                  initialPosition={{ bottom: 8, left: 8 }}
+                />
+                <CornerCheckbox
+                  corner="bottom-right"
+                  initialPosition={{ bottom: 8, right: 8 }}
+                />
+
+                {placement === "Inline with the header" && (
+                  <div className="absolute top-2 right-2 p-1">
+                    <div className="w-4 h-4 rounded border border-gray-400 bg-teal-500 flex justify-center items-center shadow-md">
+                      <span className="text-sm font-bold text-white mt-[-2px]">
+                        ✓
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {placement === "Fixed Position" && (
+              <div className="flex flex-col sm:flex-row justify-center gap-8 mt-5">
+                <SpinButtonInput
+                  label={`Distance from ${currentDistanceName}`}
+                  value={mainDistance}
+                  setter={setMainDistance}
+                />
+                <SpinButtonInput
+                  label={`Distance from ${currentOppositeDistanceName}`}
+                  value={oppositeDistance}
+                  setter={setOppositeDistance}
+                />
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* footer */}
+        <div className="mt-8 flex justify-end gap-3 bg-gray-50 sticky bottom-0">
+          <button
+            className="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors shadow-sm"
+            onClick={onBack}
+          >
+            Back
+          </button>
+          <button
+            className="px-6 py-2.5 rounded-lg border-none bg-teal-500 text-white text-sm font-medium cursor-pointer hover:bg-teal-600 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save and Next"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-
-// =========================================================================
-// STEP 3: CONFIRMATION COMPONENT
-// =========================================================================
+/* -------------------------------------------------
+   STEP 3: Confirmation
+------------------------------------------------- */
 function ConfirmationScreen({ onReview }) {
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans flex justify-center items-center h-screen flex-col">
@@ -532,12 +655,10 @@ function ConfirmationScreen({ onReview }) {
   );
 }
 
-// =========================================================================
-// MAIN EXPORT - React Router v7 Compatible
-// =========================================================================
+/* -------------------------------------------------
+   MAIN ROUTE
+------------------------------------------------- */
 export default function SettingsRoute() {
-  // const API_BASE_URL = "https://currency-switcher-explified.vercel.app";
-
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({
     currencies: [],
@@ -546,24 +667,22 @@ export default function SettingsRoute() {
   const [loading, setLoading] = useState(true);
   const [shop, setShop] = useState(null);
 
-  // ✅ Get shop from URL params
+  // get shop
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     let shopParam = params.get("shop");
     console.log("📝 Shop from URL:", shopParam);
 
-    // Fallback if shop param not found
     if (!shopParam) {
-      // For embedded admin apps, always use the default since we know the user is authenticated
-      shopParam = "currency-switcher-app-2.myshopify.com"; // ✅ This IS the correct shop!
-      console.log("✅ Using authenticated shop from fallback:", shopParam);
+      shopParam = "currency-switcher-app-2.myshopify.com";
+      console.log("✅ Using fallback shop:", shopParam);
     }
 
     setShop(shopParam);
   }, []);
 
-  // ✅ Load saved settings from backend (only when shop is available)
+  // load settings
   useEffect(() => {
     if (!shop) {
       console.warn("⚠️ No shop param available");
@@ -575,21 +694,22 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl = `/app/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
+        const apiUrl = `/app/api/merchant-settings?shop=${encodeURIComponent(
+          shop,
+        )}`;
         console.log("🌐 Fetching from:", apiUrl);
 
         const res = await fetch(apiUrl, { credentials: "omit" });
 
         if (!res.ok) {
           console.warn(
-            "⚠️ Settings fetch returned status:",
+            "⚠️ Settings fetch status:",
             res.status,
             "Using defaults",
           );
           setStep1Data({
-            selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+            currencies: DEFAULT_SELECTED,
             defaultCurrency: "INR",
-            baseCurrency: "USD",
             placement: "bottom-right",
           });
           setLoading(false);
@@ -598,23 +718,24 @@ export default function SettingsRoute() {
 
         const json = await res.json();
         console.log("✅ Settings loaded:", json);
-        setStep1Data({
-  currencies: json.selectedCurrencies ?? [],
-  defaultCurrency: json.defaultCurrency ?? "INR",
-  placement: json.placement ?? "bottom-right",
-  fixedCorner: json.fixedCorner ?? "bottom-right",
-  distanceTop: json.distanceTop ?? 16,
-  distanceRight: json.distanceRight ?? 16,
-  distanceBottom: json.distanceBottom ?? 16,
-  distanceLeft: json.distanceLeft ?? 16,
-});
 
-      } catch (err) {
-        console.error("❌ Error loading settings:", err.message);
+        const data = json.data || json;
+
         setStep1Data({
-          selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+          currencies: data.selectedCurrencies ?? DEFAULT_SELECTED,
+          defaultCurrency: data.defaultCurrency ?? "INR",
+          placement: data.placement ?? "bottom-right",
+          fixedCorner: data.fixedCorner ?? "bottom-right",
+          distanceTop: data.distanceTop ?? 16,
+          distanceRight: data.distanceRight ?? 16,
+          distanceBottom: data.distanceBottom ?? 16,
+          distanceLeft: data.distanceLeft ?? 16,
+        });
+      } catch (err) {
+        console.error("❌ Error loading settings:", err);
+        setStep1Data({
+          currencies: DEFAULT_SELECTED,
           defaultCurrency: "INR",
-          baseCurrency: "USD",
           placement: "bottom-right",
         });
       } finally {
@@ -629,88 +750,82 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
-const handleStep2Save = useCallback(
-  async (data) => {
-    console.log("🔥 [Step2Save] START with data:", data);
+  const handleStep2Save = useCallback(
+    async (data) => {
+      console.log("🔥 [Step2Save] START with data:", data);
 
-    if (!shop) {
-      console.error("❌ [Step2Save] Shop missing, aborting save");
-      return;
-    }
-
-    // 1) Normalize placement for backend
-    let normalizedPlacement;
-    if (data.placement === "Fixed Position") {
-      normalizedPlacement = data.fixedCorner;
-    } else if (data.placement === "Inline with the header") {
-      normalizedPlacement = "inline";
-    } else if (data.placement === "Don't show at all") {
-      normalizedPlacement = "hidden";
-    } else {
-      normalizedPlacement = "bottom-right";
-    }
-
-    // 2) Build payload (must match API)
-    const payload = {
-      shop,
-      currencies: step1Data.currencies, // array like ["USD","INR"]
-      defaultCurrency: step1Data.defaultCurrency,
-      baseCurrency: "USD",
-      placement: normalizedPlacement,
-      fixedCorner: data.fixedCorner,
-      distanceTop: data.distanceTop,
-      distanceRight: data.distanceRight,
-      distanceBottom: data.distanceBottom,
-      distanceLeft: data.distanceLeft,
-    };
-
-    console.log("📝 [Step2Save] Payload to send:", payload);
-    console.log("📡 [Step2Save] about to POST /app/api/merchant-settings");
-
-    try {
-      const res = await fetch("/app/api/merchant-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const responseData = await res.json().catch(() => null);
-      console.log("📊 [Step2Save] Response status:", res.status);
-      console.log("📊 [Step2Save] Response body:", responseData);
-
-      if (!res.ok || !responseData?.ok) {
-        console.error("❌ [Step2Save] API error:", responseData);
-        alert(
-          `Save failed: ${
-            responseData?.error || `HTTP ${res.status}`
-          }`,
-        );
+      if (!shop) {
+        console.error("❌ [Step2Save] Shop missing");
         return;
       }
 
-      // 4) Persist to local state
-      setStep1Data((prev) => ({
-        ...prev,
+      let normalizedPlacement;
+      if (data.placement === "Fixed Position") {
+        normalizedPlacement = data.fixedCorner;
+      } else if (data.placement === "Inline with the header") {
+        normalizedPlacement = "inline";
+      } else if (data.placement === "Don't show at all") {
+        normalizedPlacement = "hidden";
+      } else {
+        normalizedPlacement = "bottom-right";
+      }
+
+      const payload = {
+        shop,
+        currencies: step1Data.currencies,
+        defaultCurrency: step1Data.defaultCurrency,
+        baseCurrency: "USD",
         placement: normalizedPlacement,
         fixedCorner: data.fixedCorner,
         distanceTop: data.distanceTop,
         distanceRight: data.distanceRight,
         distanceBottom: data.distanceBottom,
         distanceLeft: data.distanceLeft,
-      }));
+      };
 
-      console.log("✅ [Step2Save] Settings saved, moving to step 3");
-      setStep(3);
-    } catch (err) {
-      console.error("❌ [Step2Save] Network/parsing error:", err);
-      alert(`Error: ${err.message}`);
-    }
-  },
-  [shop, step1Data],
-);
+      console.log("📝 [Step2Save] Payload:", payload);
+      console.log("📡 [Step2Save] POST /app/api/merchant-settings");
 
+      try {
+        const res = await fetch("/app/api/merchant-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
+        const responseData = await res.json().catch(() => null);
+        console.log("📊 [Step2Save] Response status:", res.status);
+        console.log("📊 [Step2Save] Response body:", responseData);
 
+        if (!res.ok || !responseData?.ok) {
+          console.error("❌ [Step2Save] API error:", responseData);
+          alert(
+            `Save failed: ${
+              responseData?.error || `HTTP ${res.status}`
+            }`,
+          );
+          return;
+        }
+
+        setStep1Data((prev) => ({
+          ...prev,
+          placement: normalizedPlacement,
+          fixedCorner: data.fixedCorner,
+          distanceTop: data.distanceTop,
+          distanceRight: data.distanceRight,
+          distanceBottom: data.distanceBottom,
+          distanceLeft: data.distanceLeft,
+        }));
+
+        console.log("✅ [Step2Save] Saved, go to step 3");
+        setStep(3);
+      } catch (err) {
+        console.error("❌ [Step2Save] Network error:", err);
+        alert(`Error: ${err.message}`);
+      }
+    },
+    [shop, step1Data],
+  );
 
   if (loading) {
     return (
@@ -744,12 +859,8 @@ const handleStep2Save = useCallback(
       ) {
         return "Fixed Position";
       }
-      if (placement === "inline") {
-        return "Inline with the header";
-      }
-      if (placement === "hidden") {
-        return "Don't show at all";
-      }
+      if (placement === "inline") return "Inline with the header";
+      if (placement === "hidden") return "Don't show at all";
       return "Fixed Position";
     };
 

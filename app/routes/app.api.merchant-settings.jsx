@@ -14,7 +14,6 @@ function jsonResponse(body, status = 200) {
 export async function action({ request }) {
   const method = request.method;
 
-  // CORS preflight support (optional but safe)
   if (method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -29,11 +28,11 @@ export async function action({ request }) {
   try {
     const defaultShop = "currency-switcher-app-2.myshopify.com";
 
-    // =================== POST: SAVE SETTINGS ===================
+    // ---------- POST: SAVE ----------
     if (method === "POST") {
       const body = await request.json();
 
-      console.log("📨 [API POST] Raw body received:", body);
+      console.log("📨 [API POST] Raw body:", body);
 
       const {
         shop = defaultShop,
@@ -48,7 +47,7 @@ export async function action({ request }) {
         distanceLeft = 16,
       } = body;
 
-      console.log("🔍 [API POST] Parsed values:", {
+      console.log("🔍 [API POST] Parsed:", {
         shop,
         currencies,
         defaultCurrency,
@@ -56,17 +55,13 @@ export async function action({ request }) {
         fixedCorner,
       });
 
-      // Validation
       if (!shop || !Array.isArray(currencies) || currencies.length === 0) {
-        console.error("❌ [API POST] Validation failed:", {
-          shop: shop || "MISSING",
-          currencies,
-        });
+        console.error("❌ [API POST] Missing shop/currencies");
         return jsonResponse(
           {
             ok: false,
             error:
-              "Missing required fields: shop and currencies (non-empty array) are required",
+              "Missing required fields: shop and currencies (non-empty array) required",
           },
           400,
         );
@@ -79,8 +74,6 @@ export async function action({ request }) {
           400,
         );
       }
-
-      console.log("✅ [API POST] Validation passed, saving to DB…");
 
       const saved = await prisma.merchantSettings.upsert({
         where: { shop },
@@ -109,24 +102,20 @@ export async function action({ request }) {
         },
       });
 
-      console.log("✅ [API POST] Saved to DB:", saved);
+      console.log("✅ [API POST] Saved row:", saved);
 
       return jsonResponse(
-        {
-          ok: true,
-          message: "Settings saved successfully",
-          data: saved,
-        },
+        { ok: true, message: "Settings saved", data: saved },
         200,
       );
     }
 
-    // =================== GET: LOAD SETTINGS ===================
+    // ---------- GET: LOAD ----------
     if (method === "GET") {
       const url = new URL(request.url);
       const shop = url.searchParams.get("shop") || defaultShop;
 
-      console.log("📨 [API GET] shop param:", shop);
+      console.log("📨 [API GET] shop:", shop);
 
       if (!shop) {
         return jsonResponse({ ok: false, error: "Shop not provided" }, 400);
@@ -137,11 +126,11 @@ export async function action({ request }) {
       });
 
       if (saved) {
-        console.log("✅ [API GET] Found in DB:", saved);
+        console.log("✅ [API GET] Found:", saved);
         return jsonResponse({ ok: true, data: saved }, 200);
       }
 
-      console.log("⚠️ [API GET] Not found, returning defaults");
+      console.log("⚠️ [API GET] Not found, sending defaults");
       return jsonResponse(
         {
           ok: true,
@@ -166,16 +155,12 @@ export async function action({ request }) {
   } catch (err) {
     console.error("❌ [API ERROR]:", err);
     return jsonResponse(
-      {
-        ok: false,
-        error: err?.message || "Internal server error",
-      },
+      { ok: false, error: err?.message || "Internal error" },
       500,
     );
   }
 }
 
-// React Router v7 loader -> same handler
 export async function loader(args) {
   return action(args);
 }
