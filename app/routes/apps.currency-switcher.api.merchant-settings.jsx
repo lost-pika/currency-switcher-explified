@@ -33,7 +33,7 @@ export async function action({ request }) {
 
       if (!shop || !currencies || !defaultCurrency) {
         return new Response(
-          { error: "Missing required fields" },
+          JSON.stringify({ error: "Missing required fields" }),
           { status: 400, headers: CORS_HEADERS },
         );
       }
@@ -65,7 +65,10 @@ export async function action({ request }) {
         },
       });
 
-      return new Response({ success: true }, { headers: CORS_HEADERS });
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: CORS_HEADERS },
+      );
     }
 
     if (method === "GET") {
@@ -74,17 +77,22 @@ export async function action({ request }) {
 
       if (!shop) {
         return new Response(
-          { error: "Shop not provided" },
+          JSON.stringify({ error: "Shop not provided" }),
           { status: 400, headers: CORS_HEADERS },
         );
       }
 
       const saved = await prisma.merchantSettings.findUnique({ where: { shop } });
 
-      if (saved) return new Response(saved, { headers: CORS_HEADERS });
+      if (saved) {
+        return new Response(
+          JSON.stringify(saved),
+          { status: 200, headers: CORS_HEADERS },
+        );
+      }
 
       return new Response(
-        {
+        JSON.stringify({
           selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
           defaultCurrency: "INR",
           baseCurrency: "USD",
@@ -94,19 +102,19 @@ export async function action({ request }) {
           distanceRight: 16,
           distanceBottom: 16,
           distanceLeft: 16,
-        },
-        { headers: CORS_HEADERS },
+        }),
+        { status: 200, headers: CORS_HEADERS },
       );
     }
 
     return new Response(
-      { error: "Method not allowed" },
+      JSON.stringify({ error: "Method not allowed" }),
       { status: 405, headers: CORS_HEADERS },
     );
   } catch (err) {
     console.error("merchant-settings error:", err);
     return new Response(
-      { error: err.message || "Internal error" },
+      JSON.stringify({ error: err.message || "Internal error" }),
       { status: 500, headers: CORS_HEADERS },
     );
   }

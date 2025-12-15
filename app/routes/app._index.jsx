@@ -330,27 +330,26 @@ function PlacementSelector({
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
-const handleSave = async () => {
-  console.log("▶ handleSave clicked");
-  setIsSaving(true);
-  try {
-    const payload = {
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    };
-    console.log("▶ handleSave calling onSave with:", payload);
-    await onSave(payload);
-  } catch (e) {
-    console.error("❌ handleSave error:", e);
-  } finally {
-    setIsSaving(false);
-  }
-};
-
+  const handleSave = async () => {
+    console.log("▶ handleSave clicked");
+    setIsSaving(true);
+    try {
+      const payload = {
+        placement,
+        fixedCorner,
+        distanceTop,
+        distanceRight,
+        distanceBottom,
+        distanceLeft,
+      };
+      console.log("▶ handleSave calling onSave with:", payload);
+      await onSave(payload);
+    } catch (e) {
+      console.error("❌ handleSave error:", e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
@@ -737,60 +736,59 @@ export default function SettingsRoute() {
   }, []);
 
   const handleStep2Save = useCallback(
-  async (data) => {
-    let normalizedPlacement;
+    async (data) => {
+      let normalizedPlacement;
 
-    if (data.placement === "Fixed Position") {
-      normalizedPlacement = data.fixedCorner;
-    } else if (data.placement === "Inline with the header") {
-      normalizedPlacement = "inline";
-    } else if (data.placement === "Don't show at all") {
-      normalizedPlacement = "hidden";
-    }
-
-    const payload = {
-      shop,
-      currencies: step1Data.selectedCurrencies,
-      defaultCurrency: step1Data.defaultCurrency,
-      baseCurrency: "USD",
-      placement: normalizedPlacement,
-      fixedCorner: data.fixedCorner,
-      distanceTop: data.distanceTop,
-      distanceRight: data.distanceRight,
-      distanceBottom: data.distanceBottom,
-      distanceLeft: data.distanceLeft,
-    };
-
-    console.log("📝 [Step2] Sending to backend:", payload);
-
-    try {
-      const res = await fetch(
-        "/apps/currency-switcher/api/merchant-settings",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const text = await res.text();
-      console.log("📝 [Step2] Response:", res.status, text);
-
-      if (!res.ok) {
-        throw new Error(text || `Save failed: ${res.status}`);
+      if (data.placement === "Fixed Position") {
+        normalizedPlacement = data.fixedCorner;
+      } else if (data.placement === "Inline with the header") {
+        normalizedPlacement = "inline";
+      } else if (data.placement === "Don't show at all") {
+        normalizedPlacement = "hidden";
       }
 
-      console.log("✅ [Step2] Settings saved successfully");
-      setStep(3);
-    } catch (err) {
-      console.error("❌ [Step2] Error saving settings:", err.message);
-      alert(`Failed to save settings: ${err.message}`);
-    }
-  },
-  [step1Data, shop]
-);
+      const payload = {
+        shop,
+        currencies: step1Data.selectedCurrencies,
+        defaultCurrency: step1Data.defaultCurrency,
+        baseCurrency: "USD",
+        placement: normalizedPlacement,
+        fixedCorner: data.fixedCorner,
+        distanceTop: data.distanceTop,
+        distanceRight: data.distanceRight,
+        distanceBottom: data.distanceBottom,
+        distanceLeft: data.distanceLeft,
+      };
 
+      console.log("📝 [Step2] Sending to backend:", payload);
+
+      try {
+        const res = await fetch(
+          "/apps/currency-switcher/api/merchant-settings",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "omit", // ← CHANGE from "include"
+            body: JSON.stringify(payload),
+          },
+        );
+
+        const text = await res.text();
+        console.log("📝 [Step2] Response:", res.status, text);
+
+        if (!res.ok) {
+          throw new Error(text || `Save failed: ${res.status}`);
+        }
+
+        console.log("✅ [Step2] Settings saved successfully");
+        setStep(3);
+      } catch (err) {
+        console.error("❌ [Step2] Error saving settings:", err.message);
+        alert(`Failed to save settings: ${err.message}`);
+      }
+    },
+    [step1Data, shop],
+  );
 
   if (loading) {
     return (
@@ -817,39 +815,40 @@ export default function SettingsRoute() {
 
   if (step === 2) {
     const normalizePlacementForUI = (placement) => {
-  if (
-    ["top-left", "top-right", "bottom-left", "bottom-right"].includes(placement)
-  ) {
-    return "Fixed Position";
-  }
-  if (placement === "inline") {
-    return "Inline with the header";
-  }
-  if (placement === "hidden") {
-    return "Don't show at all";
-  }
-  return "Fixed Position";
-};
+      if (
+        ["top-left", "top-right", "bottom-left", "bottom-right"].includes(
+          placement,
+        )
+      ) {
+        return "Fixed Position";
+      }
+      if (placement === "inline") {
+        return "Inline with the header";
+      }
+      if (placement === "hidden") {
+        return "Don't show at all";
+      }
+      return "Fixed Position";
+    };
 
     return (
       <PlacementSelector
-  onBack={() => setStep(1)}
-  onSave={handleStep2Save}
-  initialPlacement={normalizePlacementForUI(step1Data.placement)}
-  initialFixedCorner={
-    step1Data.fixedCorner ||
-    (["top-left", "top-right", "bottom-left", "bottom-right"].includes(
-      step1Data.placement
-    )
-      ? step1Data.placement
-      : "bottom-left")
-  }
-  initialDistanceTop={step1Data.distanceTop ?? 16}
-  initialDistanceRight={step1Data.distanceRight ?? 16}
-  initialDistanceBottom={step1Data.distanceBottom ?? 16}
-  initialDistanceLeft={step1Data.distanceLeft ?? 16}
-/>
-
+        onBack={() => setStep(1)}
+        onSave={handleStep2Save}
+        initialPlacement={normalizePlacementForUI(step1Data.placement)}
+        initialFixedCorner={
+          step1Data.fixedCorner ||
+          (["top-left", "top-right", "bottom-left", "bottom-right"].includes(
+            step1Data.placement,
+          )
+            ? step1Data.placement
+            : "bottom-left")
+        }
+        initialDistanceTop={step1Data.distanceTop ?? 16}
+        initialDistanceRight={step1Data.distanceRight ?? 16}
+        initialDistanceBottom={step1Data.distanceBottom ?? 16}
+        initialDistanceLeft={step1Data.distanceLeft ?? 16}
+      />
     );
   }
 
