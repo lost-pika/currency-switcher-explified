@@ -330,26 +330,22 @@ function PlacementSelector({
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
-  const handleSave = async () => {
-    console.log("▶ handleSave clicked");
-    setIsSaving(true);
-    try {
-      const payload = {
-        placement,
-        fixedCorner,
-        distanceTop,
-        distanceRight,
-        distanceBottom,
-        distanceLeft,
-      };
-      console.log("▶ handleSave calling onSave with:", payload);
-      await onSave(payload);
-    } catch (e) {
-      console.error("❌ handleSave error:", e);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+ const handleSave = async () => {
+  setIsSaving(true);
+  try {
+    await onSave({
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    });
+  } finally {
+    setIsSaving(false); // ✅ ALWAYS resets
+  }
+};
+
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
@@ -806,10 +802,10 @@ const handleStep2Save = useCallback(
     console.log("📝 [Step2] Response:", res.status, responseText);
 
     if (!res.ok) {
-      throw new Error(
-        responseText || `Save failed with status ${res.status}`,
-      );
-    }
+  console.error("❌ Save failed:", responseText);
+  return; // ⬅️ IMPORTANT: don't throw
+}
+
 
     /* -------------------------------------------------
        4️⃣ Persist state locally (IMPORTANT)
