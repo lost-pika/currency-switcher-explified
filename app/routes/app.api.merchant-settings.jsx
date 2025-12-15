@@ -1,12 +1,19 @@
 // app/routes/app.api.merchant-settings.jsx
 
-import { json } from "@react-router/node";  // react-router v7
 import prisma from "../db.server";
 
-export async function action({ request, context }) {
+function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+export async function action({ request }) {
   const method = request.method;
 
-  // Optional CORS for safety
   if (method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -19,26 +26,26 @@ export async function action({ request, context }) {
   }
 
   try {
-    // Authenticated shop in admin, fallback for dev
-    const shop = context?.sessionShop || "currency-switcher-app-2.myshopify.com";
+    const defaultShop = "currency-switcher-app-2.myshopify.com";
 
     if (method === "POST") {
       const body = await request.json();
 
       const {
+        shop = defaultShop,
         currencies,
         defaultCurrency,
         baseCurrency = "USD",
-        placement = "Fixed Position",   // "Fixed Position" | "Inline with header" | "Hidden"
-        fixedCorner = "bottom-right",   // "top-left" | "top-right" | "bottom-left" | "bottom-right"
+        placement = "Fixed Position",
+        fixedCorner = "bottom-right",
         distanceTop = 16,
         distanceRight = 16,
         distanceBottom = 16,
         distanceLeft = 16,
       } = body;
 
-      if (!currencies || !Array.isArray(currencies) || !defaultCurrency) {
-        return json({ error: "Missing required fields" }, { status: 400 });
+      if (!shop || !currencies || !Array.isArray(currencies) || !defaultCurrency) {
+        return jsonResponse({ error: "Missing required fields" }, 400);
       }
 
       const saved = await prisma.merchantSettings.upsert({
@@ -69,30 +76,30 @@ export async function action({ request, context }) {
       });
 
       console.log("✅ merchant-settings POST saved for shop:", shop);
-      return json(saved, { status: 200 });
+      return jsonResponse(saved, 200);
     }
 
     if (method === "GET") {
       const url = new URL(request.url);
-      const shopParam = url.searchParams.get("shop") || shop;
+      const shop = url.searchParams.get("shop") || defaultShop;
 
-      if (!shopParam) {
-        return json({ error: "Shop not provided" }, { status: 400 });
+      if (!shop) {
+        return jsonResponse({ error: "Shop not provided" }, 400);
       }
 
       const saved = await prisma.merchantSettings.findUnique({
-        where: { shop: shopParam },
+        where: { shop },
       });
 
       if (saved) {
-        console.log("✅ merchant-settings GET found for shop:", shopParam);
-        return json(saved, { status: 200 });
+        console.log("✅ merchant-settings GET found for shop:", shop);
+        return jsonResponse(saved, 200);
       }
 
       console.log("⚠️ merchant-settings GET no record, sending defaults");
-      return json(
+      return jsonResponse(
         {
-          shop: shopParam,
+          shop,
           selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
           defaultCurrency: "INR",
           baseCurrency: "USD",
@@ -103,21 +110,18 @@ export async function action({ request, context }) {
           distanceBottom: 16,
           distanceLeft: 16,
         },
-        { status: 200 },
+        200,
       );
     }
 
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return jsonResponse({ error: "Method not allowed" }, 405);
   } catch (err) {
     console.error("❌ merchant-settings error:", err);
-    return json(
-      { error: err?.message || "Internal error" },
-      { status: 500 },
-    );
+    return jsonResponse({ error: err?.message || "Internal error" }, 500);
   }
 }
 
-// Remix loader → GET /app/api/merchant-settings bhi yahi handle kare
+// Remix loader
 export async function loader(args) {
   return action(args);
 }
