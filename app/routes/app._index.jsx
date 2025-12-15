@@ -736,52 +736,53 @@ export default function SettingsRoute() {
   async (data) => {
     let normalizedPlacement;
 
-if (data.placement === "Fixed Position") {
-  normalizedPlacement = data.fixedCorner; // top-right etc
-} else if (data.placement === "Inline with the header") {
-  normalizedPlacement = "inline";
-} else if (data.placement === "Don't show at all") {
-  normalizedPlacement = "hidden";
-}
-
+    if (data.placement === "Fixed Position") {
+      normalizedPlacement = data.fixedCorner;
+    } else if (data.placement === "Inline with the header") {
+      normalizedPlacement = "inline";
+    } else if (data.placement === "Don't show at all") {
+      normalizedPlacement = "hidden";
+    }
 
     const payload = {
-  shop,
-  currencies: step1Data.selectedCurrencies,
-  defaultCurrency: step1Data.defaultCurrency,
-  baseCurrency: "USD",
-  placement: normalizedPlacement,
-  fixedCorner: data.fixedCorner,
-  distanceTop: data.distanceTop,
-  distanceRight: data.distanceRight,
-  distanceBottom: data.distanceBottom,
-  distanceLeft: data.distanceLeft,
-};
-
+      shop,
+      currencies: step1Data.selectedCurrencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      baseCurrency: "USD",
+      placement: normalizedPlacement,
+      fixedCorner: data.fixedCorner,
+      distanceTop: data.distanceTop,
+      distanceRight: data.distanceRight,
+      distanceBottom: data.distanceBottom,
+      distanceLeft: data.distanceLeft,
+    };
 
     console.log("📝 [Step2] Sending to backend:", payload);
 
-   const res = await fetch(
-  "/apps/currency-switcher/api/merchant-settings",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include", // 🔥 REQUIRED FOR SHOPIFY ADMIN
-    body: JSON.stringify(payload),
-  }
-);
+    try {
+      const res = await fetch(
+        "/apps/currency-switcher/api/merchant-settings",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        }
+      );
 
+      const text = await res.text();
+      console.log("📝 [Step2] Response:", res.status, text);
 
+      if (!res.ok) {
+        throw new Error(text || `Save failed: ${res.status}`);
+      }
 
-    const text = await res.text();
-    console.log("📝 [Step2] Response:", res.status, text);
-
-    if (!res.ok) {
-      throw new Error(text || `Save failed: ${res.status}`);
+      console.log("✅ [Step2] Settings saved successfully");
+      setStep(3);
+    } catch (err) {
+      console.error("❌ [Step2] Error saving settings:", err.message);
+      alert(`Failed to save settings: ${err.message}`);
     }
-
-    console.log("✅ [Step2] Settings saved successfully");
-    setStep(3);
   },
   [step1Data, shop]
 );
