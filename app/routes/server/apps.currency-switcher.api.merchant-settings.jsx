@@ -1,6 +1,6 @@
-import { authenticate } from "../shopify.server";
-import prisma from "../db.server";
-import { CORS_HEADERS } from "./api.cors-headers";
+import { authenticate } from "../../shopify.server";
+import prisma from "../../db.server";
+import { CORS_HEADERS } from "../api.cors-headers";
 
 export async function action({ request }) {
   const method = request.method;
