@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 
+/* -------------------------------------------------
+   CONSTANTS
+------------------------------------------------- */
 const ALL_CURRENCIES = [
   { code: "USD", label: "USD - US Dollar" },
   { code: "EUR", label: "EUR - Euro" },
@@ -24,9 +27,9 @@ const MOCK_CHECKBOX_DATA = [
   { code: "AUD_1", label: "AUD - Australian Dollar", actualCode: "AUD" },
 ];
 
-// =========================================================================
-// STEP 1: CURRENCY SELECTOR COMPONENT
-// =========================================================================
+/* -------------------------------------------------
+   STEP 1: CurrencySelector
+------------------------------------------------- */
 function CurrencySelector({
   onNext,
   initialSelected = DEFAULT_SELECTED,
@@ -81,10 +84,10 @@ function CurrencySelector({
 
   const handleSaveAndNext = () => {
     const dataToSave = {
-      selectedCurrencies: selectedCodes,
+      currencies: selectedCodes,
       defaultCurrency: defaultCode,
-      placement: "bottom-right",
     };
+
     console.log("💾 [Step1] Data being sent:", dataToSave);
     onNext(dataToSave);
   };
@@ -96,6 +99,7 @@ function CurrencySelector({
 
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans">
+      {/* Header */}
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between gap-5 items-start md:items-end mb-8 px-2">
           <div className="flex flex-col">
@@ -120,6 +124,7 @@ function CurrencySelector({
           </div>
         </div>
 
+        {/* Currency chips & checkboxes */}
         <div className="flex flex-col gap-6">
           <section className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
             <div className="flex justify-between items-start gap-4 mb-4">
@@ -216,7 +221,9 @@ function CurrencySelector({
                             readOnly
                             className="w-4 h-4 accent-teal-500 border-gray-300 rounded"
                           />
-                          <span className="select-none">{currency.label}</span>
+                          <span className="select-none">
+                            {currency.label}
+                          </span>
                         </label>
                       ))
                     )}
@@ -226,10 +233,12 @@ function CurrencySelector({
             </div>
           </section>
 
+          {/* Default currency */}
           <section className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
             <h2 className="text-xl font-semibold">Default Currency</h2>
             <p className="mt-1 text-sm text-gray-500">
-              This currency will be selected by default for your store visitors.
+              This currency will be selected by default for your store
+              visitors.
             </p>
 
             <div className="mt-4 max-w-sm">
@@ -273,6 +282,7 @@ function CurrencySelector({
           </section>
         </div>
 
+        {/* footer buttons */}
         <div className="mt-8 flex justify-end gap-3 bg-gray-50 sticky bottom-0">
           <button className="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors shadow-sm">
             Back
@@ -290,9 +300,9 @@ function CurrencySelector({
   );
 }
 
-// =========================================================================
-// STEP 2: PLACEMENT SELECTOR COMPONENT
-// =========================================================================
+/* -------------------------------------------------
+   STEP 2: PlacementSelector
+------------------------------------------------- */
 function PlacementSelector({
   onBack,
   onSave,
@@ -311,14 +321,8 @@ function PlacementSelector({
   const [distanceLeft, setDistanceLeft] = useState(initialDistanceLeft);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    setPlacement(initialPlacement);
-  }, [initialPlacement]);
-
-  useEffect(() => {
-    setFixedCorner(initialFixedCorner);
-  }, [initialFixedCorner]);
-
+  useEffect(() => setPlacement(initialPlacement), [initialPlacement]);
+  useEffect(() => setFixedCorner(initialFixedCorner), [initialFixedCorner]);
   useEffect(() => setDistanceTop(initialDistanceTop), [initialDistanceTop]);
   useEffect(
     () => setDistanceRight(initialDistanceRight),
@@ -331,6 +335,15 @@ function PlacementSelector({
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
   const handleSave = async () => {
+    console.log("💾 [PlacementSelector] handleSave called with:", {
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    });
+
     setIsSaving(true);
     try {
       await onSave({
@@ -341,8 +354,6 @@ function PlacementSelector({
         distanceBottom,
         distanceLeft,
       });
-    } catch (e) {
-      console.error(e);
     } finally {
       setIsSaving(false);
     }
@@ -378,16 +389,13 @@ function PlacementSelector({
 
   const CornerCheckbox = ({ corner, initialPosition }) => {
     const isChecked = isCornerChecked(corner);
-
     const dynamicStyle = isChecked
       ? getCornerDistance(corner)
       : initialPosition;
 
     const handleClick = (e) => {
       e.preventDefault();
-      if (placement !== "Fixed Position") {
-        setPlacement("Fixed Position");
-      }
+      if (placement !== "Fixed Position") setPlacement("Fixed Position");
       setFixedCorner(corner);
     };
 
@@ -471,6 +479,7 @@ function PlacementSelector({
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans">
       <div className="max-w-4xl mx-auto">
+        {/* header */}
         <div className="flex flex-col md:flex-row justify-between gap-5 items-start md:items-end mb-8 px-2">
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1 cursor-pointer">
@@ -496,6 +505,7 @@ function PlacementSelector({
           </div>
         </div>
 
+        {/* placement card */}
         <div className="flex flex-col gap-6">
           <section className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
             <div className="text-center">
@@ -535,6 +545,7 @@ function PlacementSelector({
               </div>
             </div>
 
+            {/* preview box */}
             <div className="flex justify-center py-8">
               <div className="w-full max-w-xs h-60 border-4 border-gray-400 rounded-xl relative bg-white shadow-lg overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1/4 bg-white flex justify-center items-center border-b border-gray-200">
@@ -566,9 +577,7 @@ function PlacementSelector({
 
                 {placement === "Inline with the header" && (
                   <div className="absolute top-2 right-2 p-1">
-                    <div
-                      className={`w-4 h-4 rounded border border-gray-400 bg-teal-500 flex justify-center items-center shadow-md`}
-                    >
+                    <div className="w-4 h-4 rounded border border-gray-400 bg-teal-500 flex justify-center items-center shadow-md">
                       <span className="text-sm font-bold text-white mt-[-2px]">
                         ✓
                       </span>
@@ -595,6 +604,7 @@ function PlacementSelector({
           </section>
         </div>
 
+        {/* footer */}
         <div className="mt-8 flex justify-end gap-3 bg-gray-50 sticky bottom-0">
           <button
             className="px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors shadow-sm"
@@ -615,9 +625,9 @@ function PlacementSelector({
   );
 }
 
-// =========================================================================
-// STEP 3: CONFIRMATION COMPONENT
-// =========================================================================
+/* -------------------------------------------------
+   STEP 3: Confirmation
+------------------------------------------------- */
 function ConfirmationScreen({ onReview }) {
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans flex justify-center items-center h-screen flex-col">
@@ -645,38 +655,34 @@ function ConfirmationScreen({ onReview }) {
   );
 }
 
-// =========================================================================
-// MAIN EXPORT - React Router v7 Compatible
-// =========================================================================
+/* -------------------------------------------------
+   MAIN ROUTE
+------------------------------------------------- */
 export default function SettingsRoute() {
-  const API_BASE_URL = "https://currency-switcher-explified.vercel.app";
-
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({
-    selectedCurrencies: [],
+    currencies: [],
     defaultCurrency: "",
   });
   const [loading, setLoading] = useState(true);
   const [shop, setShop] = useState(null);
 
-  // ✅ Get shop from URL params
+  // get shop
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     let shopParam = params.get("shop");
     console.log("📝 Shop from URL:", shopParam);
 
-    // Fallback if shop param not found
     if (!shopParam) {
-      // For embedded admin apps, always use the default since we know the user is authenticated
-      shopParam = "currency-switcher-app-2.myshopify.com"; // ✅ This IS the correct shop!
-      console.log("✅ Using authenticated shop from fallback:", shopParam);
+      shopParam = "currency-switcher-app-2.myshopify.com";
+      console.log("✅ Using fallback shop:", shopParam);
     }
 
     setShop(shopParam);
   }, []);
 
-  // ✅ Load saved settings from backend (only when shop is available)
+  // load settings
   useEffect(() => {
     if (!shop) {
       console.warn("⚠️ No shop param available");
@@ -688,21 +694,22 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl = `${API_BASE_URL}/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
+        const apiUrl = `/app/api/merchant-settings?shop=${encodeURIComponent(
+          shop,
+        )}`;
         console.log("🌐 Fetching from:", apiUrl);
 
         const res = await fetch(apiUrl, { credentials: "omit" });
 
         if (!res.ok) {
           console.warn(
-            "⚠️ Settings fetch returned status:",
+            "⚠️ Settings fetch status:",
             res.status,
             "Using defaults",
           );
           setStep1Data({
-            selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+            currencies: DEFAULT_SELECTED,
             defaultCurrency: "INR",
-            baseCurrency: "USD",
             placement: "bottom-right",
           });
           setLoading(false);
@@ -711,13 +718,24 @@ export default function SettingsRoute() {
 
         const json = await res.json();
         console.log("✅ Settings loaded:", json);
-        setStep1Data(json);
-      } catch (err) {
-        console.error("❌ Error loading settings:", err.message);
+
+        const data = json.data || json;
+
         setStep1Data({
-          selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+          currencies: data.selectedCurrencies ?? DEFAULT_SELECTED,
+          defaultCurrency: data.defaultCurrency ?? "INR",
+          placement: data.placement ?? "bottom-right",
+          fixedCorner: data.fixedCorner ?? "bottom-right",
+          distanceTop: data.distanceTop ?? 16,
+          distanceRight: data.distanceRight ?? 16,
+          distanceBottom: data.distanceBottom ?? 16,
+          distanceLeft: data.distanceLeft ?? 16,
+        });
+      } catch (err) {
+        console.error("❌ Error loading settings:", err);
+        setStep1Data({
+          currencies: DEFAULT_SELECTED,
           defaultCurrency: "INR",
-          baseCurrency: "USD",
           placement: "bottom-right",
         });
       } finally {
@@ -734,42 +752,105 @@ export default function SettingsRoute() {
 
   const handleStep2Save = useCallback(
   async (data) => {
-    const normalizedPlacement =
-      data.placement === "Fixed Position"
-        ? data.fixedCorner
-        : data.placement;
+    console.log("🔥 [Step2Save] START with data:", data);
+
+    if (!shop) {
+      console.error("❌ [Step2Save] Shop missing");
+      alert("Shop not found!");
+      return;
+    }
+
+    let normalizedPlacement;
+    if (data.placement === "Fixed Position") {
+      normalizedPlacement = data.fixedCorner;
+    } else if (data.placement === "Inline with the header") {
+      normalizedPlacement = "inline";
+    } else if (data.placement === "Don't show at all") {
+      normalizedPlacement = "hidden";
+    } else {
+      normalizedPlacement = "bottom-right";
+    }
 
     const payload = {
       shop,
-      currencies: step1Data.selectedCurrencies,
+      currencies: step1Data.currencies,
       defaultCurrency: step1Data.defaultCurrency,
+      baseCurrency: "USD",
       placement: normalizedPlacement,
+      fixedCorner: data.fixedCorner,
+      distanceTop: data.distanceTop,
+      distanceRight: data.distanceRight,
+      distanceBottom: data.distanceBottom,
+      distanceLeft: data.distanceLeft,
     };
 
-    console.log("📝 [Step2] Sending to backend:", payload);
+    console.log("📝 [Step2Save] Payload:", payload);
 
-    const res = await fetch(
-      "https://currency-switcher-explified.vercel.app/api/merchant-settings",
-      {
+    try {
+      console.log("📡 [Step2Save] Sending POST to /app/api/merchant-settings");
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sec timeout
+
+      const res = await fetch("/app/api/merchant-settings", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      console.log("📊 [Step2Save] Response received, status:", res.status);
+
+      let responseData = null;
+      try {
+        responseData = await res.json();
+        console.log("📊 [Step2Save] Parsed JSON:", responseData);
+      } catch (parseErr) {
+        console.error("❌ [Step2Save] JSON parse error:", parseErr);
+        const text = await res.text();
+        console.log("Raw response text:", text);
+        alert(`Response parse error: ${parseErr.message}`);
+        return;
       }
-    );
 
-    const text = await res.text();
-    console.log("📝 [Step2] Response:", res.status, text);
+      if (!res.ok) {
+        console.error("❌ [Step2Save] API returned non-OK status:", res.status);
+        alert(`API Error ${res.status}: ${responseData?.error || "Unknown error"}`);
+        return;
+      }
 
-    if (!res.ok) {
-      throw new Error(text || `Save failed: ${res.status}`);
+      if (!responseData?.ok) {
+        console.error("❌ [Step2Save] API ok flag false:", responseData);
+        alert(`API Error: ${responseData?.error || "Unknown error"}`);
+        return;
+      }
+
+      console.log("✅ [Step2Save] Success! Response:", responseData);
+
+      setStep1Data((prev) => ({
+        ...prev,
+        placement: normalizedPlacement,
+        fixedCorner: data.fixedCorner,
+        distanceTop: data.distanceTop,
+        distanceRight: data.distanceRight,
+        distanceBottom: data.distanceBottom,
+        distanceLeft: data.distanceLeft,
+      }));
+
+      console.log("✅ [Step2Save] Moving to confirmation screen");
+      setStep(3);
+    } catch (err) {
+      console.error("❌ [Step2Save] Catch error:", err);
+      if (err.name === "AbortError") {
+        alert("Request timeout - server took too long to respond");
+      } else {
+        alert(`Error: ${err.message}`);
+      }
     }
-
-    console.log("✅ [Step2] Settings saved successfully");
-    setStep(3);
   },
-  [step1Data, shop]
+  [shop, step1Data],
 );
 
 
@@ -790,19 +871,39 @@ export default function SettingsRoute() {
     return (
       <CurrencySelector
         onNext={handleStep1Save}
-        initialSelected={step1Data.selectedCurrencies || DEFAULT_SELECTED}
+        initialSelected={step1Data.currencies || DEFAULT_SELECTED}
         initialDefault={step1Data.defaultCurrency || "INR"}
       />
     );
   }
 
   if (step === 2) {
+    const normalizePlacementForUI = (placement) => {
+      if (
+        ["top-left", "top-right", "bottom-left", "bottom-right"].includes(
+          placement,
+        )
+      ) {
+        return "Fixed Position";
+      }
+      if (placement === "inline") return "Inline with the header";
+      if (placement === "hidden") return "Don't show at all";
+      return "Fixed Position";
+    };
+
     return (
       <PlacementSelector
         onBack={() => setStep(1)}
         onSave={handleStep2Save}
-        initialPlacement={step1Data.placement || "Fixed Position"}
-        initialFixedCorner={step1Data.fixedCorner || "bottom-left"}
+        initialPlacement={normalizePlacementForUI(step1Data.placement)}
+        initialFixedCorner={
+          step1Data.fixedCorner ||
+          (["top-left", "top-right", "bottom-left", "bottom-right"].includes(
+            step1Data.placement,
+          )
+            ? step1Data.placement
+            : "bottom-left")
+        }
         initialDistanceTop={step1Data.distanceTop ?? 16}
         initialDistanceRight={step1Data.distanceRight ?? 16}
         initialDistanceBottom={step1Data.distanceBottom ?? 16}

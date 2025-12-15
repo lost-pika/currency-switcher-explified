@@ -751,81 +751,108 @@ export default function SettingsRoute() {
   }, []);
 
   const handleStep2Save = useCallback(
-    async (data) => {
-      console.log("🔥 [Step2Save] START with data:", data);
+  async (data) => {
+    console.log("🔥 [Step2Save] START with data:", data);
 
-      if (!shop) {
-        console.error("❌ [Step2Save] Shop missing");
+    if (!shop) {
+      console.error("❌ [Step2Save] Shop missing");
+      alert("Shop not found!");
+      return;
+    }
+
+    let normalizedPlacement;
+    if (data.placement === "Fixed Position") {
+      normalizedPlacement = data.fixedCorner;
+    } else if (data.placement === "Inline with the header") {
+      normalizedPlacement = "inline";
+    } else if (data.placement === "Don't show at all") {
+      normalizedPlacement = "hidden";
+    } else {
+      normalizedPlacement = "bottom-right";
+    }
+
+    const payload = {
+      shop,
+      currencies: step1Data.currencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      baseCurrency: "USD",
+      placement: normalizedPlacement,
+      fixedCorner: data.fixedCorner,
+      distanceTop: data.distanceTop,
+      distanceRight: data.distanceRight,
+      distanceBottom: data.distanceBottom,
+      distanceLeft: data.distanceLeft,
+    };
+
+    console.log("📝 [Step2Save] Payload:", payload);
+
+    try {
+      console.log("📡 [Step2Save] Sending POST to /app/api/merchant-settings");
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sec timeout
+
+      const res = await fetch("/app/api/merchant-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      console.log("📊 [Step2Save] Response received, status:", res.status);
+
+      let responseData = null;
+      try {
+        responseData = await res.json();
+        console.log("📊 [Step2Save] Parsed JSON:", responseData);
+      } catch (parseErr) {
+        console.error("❌ [Step2Save] JSON parse error:", parseErr);
+        const text = await res.text();
+        console.log("Raw response text:", text);
+        alert(`Response parse error: ${parseErr.message}`);
         return;
       }
 
-      let normalizedPlacement;
-      if (data.placement === "Fixed Position") {
-        normalizedPlacement = data.fixedCorner;
-      } else if (data.placement === "Inline with the header") {
-        normalizedPlacement = "inline";
-      } else if (data.placement === "Don't show at all") {
-        normalizedPlacement = "hidden";
-      } else {
-        normalizedPlacement = "bottom-right";
+      if (!res.ok) {
+        console.error("❌ [Step2Save] API returned non-OK status:", res.status);
+        alert(`API Error ${res.status}: ${responseData?.error || "Unknown error"}`);
+        return;
       }
 
-      const payload = {
-        shop,
-        currencies: step1Data.currencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        baseCurrency: "USD",
+      if (!responseData?.ok) {
+        console.error("❌ [Step2Save] API ok flag false:", responseData);
+        alert(`API Error: ${responseData?.error || "Unknown error"}`);
+        return;
+      }
+
+      console.log("✅ [Step2Save] Success! Response:", responseData);
+
+      setStep1Data((prev) => ({
+        ...prev,
         placement: normalizedPlacement,
         fixedCorner: data.fixedCorner,
         distanceTop: data.distanceTop,
         distanceRight: data.distanceRight,
         distanceBottom: data.distanceBottom,
         distanceLeft: data.distanceLeft,
-      };
+      }));
 
-      console.log("📝 [Step2Save] Payload:", payload);
-      console.log("📡 [Step2Save] POST /app/api/merchant-settings");
-
-      try {
-        const res = await fetch("/app/api/merchant-settings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const responseData = await res.json().catch(() => null);
-        console.log("📊 [Step2Save] Response status:", res.status);
-        console.log("📊 [Step2Save] Response body:", responseData);
-
-        if (!res.ok || !responseData?.ok) {
-          console.error("❌ [Step2Save] API error:", responseData);
-          alert(
-            `Save failed: ${
-              responseData?.error || `HTTP ${res.status}`
-            }`,
-          );
-          return;
-        }
-
-        setStep1Data((prev) => ({
-          ...prev,
-          placement: normalizedPlacement,
-          fixedCorner: data.fixedCorner,
-          distanceTop: data.distanceTop,
-          distanceRight: data.distanceRight,
-          distanceBottom: data.distanceBottom,
-          distanceLeft: data.distanceLeft,
-        }));
-
-        console.log("✅ [Step2Save] Saved, go to step 3");
-        setStep(3);
-      } catch (err) {
-        console.error("❌ [Step2Save] Network error:", err);
+      console.log("✅ [Step2Save] Moving to confirmation screen");
+      setStep(3);
+    } catch (err) {
+      console.error("❌ [Step2Save] Catch error:", err);
+      if (err.name === "AbortError") {
+        alert("Request timeout - server took too long to respond");
+      } else {
         alert(`Error: ${err.message}`);
       }
-    },
-    [shop, step1Data],
-  );
+    }
+  },
+  [shop, step1Data],
+);
+
 
   if (loading) {
     return (
