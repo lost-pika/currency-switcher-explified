@@ -4,24 +4,16 @@ import prisma from "../../db.server";
 
 export async function action({ request }) {
   try {
-    console.log("🔍 [ACTION] Method:", request.method);
-    
-    // Authenticate the request
     const authResult = await authenticate.admin(request);
-    if (authResult instanceof Response) {
-      console.warn("❌ [ACTION] Auth failed");
-      return authResult;
-    }
+    if (authResult instanceof Response) return authResult;
 
-    console.log("✅ [ACTION] Auth successful, shop:", authResult.shop.myshopifyDomain);
+    const shopFromSession = authResult.session?.shop ?? authResult.shop?.myshopifyDomain;
 
-    // Handle POST
     if (request.method === "POST") {
-      console.log("📝 [POST] Reading request body...");
-      
       const body = await request.json();
+
       const {
-        shop,
+        shop = shopFromSession,
         currencies,
         defaultCurrency,
         baseCurrency = "USD",
@@ -33,20 +25,10 @@ export async function action({ request }) {
         distanceLeft = 16,
       } = body;
 
-      console.log("✅ [POST] Body parsed:", {
-        shop,
-        currencies,
-        defaultCurrency,
-        placement,
-      });
-
       if (!shop || !currencies || !defaultCurrency) {
-        console.warn("⚠️ [POST] Missing required fields");
         return json({ error: "Missing required fields" }, { status: 400 });
       }
 
-      console.log("🔄 [POST] Starting Prisma upsert...");
-      
       const result = await prisma.merchantSettings.upsert({
         where: { shop },
         update: {
@@ -74,50 +56,37 @@ export async function action({ request }) {
         },
       });
 
-      console.log("✅ [POST] Saved successfully:", result);
-      return json({ success: true });
+      return json({ success: true, settings: result });
     }
 
-    // Handle GET (for loading settings)
     if (request.method === "GET") {
       const url = new URL(request.url);
-      const shop = url.searchParams.get("shop");
-      
-      console.log("📝 [GET] shop:", shop);
+      const shop = url.searchParams.get("shop") || shopFromSession;
 
       if (!shop) {
-        console.warn("⚠️ [GET] No shop provided");
         return json({ error: "Shop not provided" }, { status: 400 });
       }
 
-      console.log("🔄 [GET] Querying Prisma...");
-      const saved = await prisma.merchantSettings.findUnique({
-        where: { shop },
-      });
+      const saved = await prisma.merchantSettings.findUnique({ where: { shop } });
 
-      console.log("✅ [GET] Prisma result:", saved);
+      if (saved) return json(saved);
 
-      if (saved) {
-        return json(saved);
-      }
-
-      // Return defaults
-      console.log("⚠️ [GET] No saved record, returning defaults");
       return json({
         selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
         defaultCurrency: "INR",
         baseCurrency: "USD",
         placement: "bottom-right",
+        fixedCorner: "bottom-right",
+        distanceTop: 16,
+        distanceRight: 16,
+        distanceBottom: 16,
+        distanceLeft: 16,
       });
     }
 
-    console.warn("⚠️ [ACTION] Method not allowed:", request.method);
     return json({ error: "Method not allowed" }, { status: 405 });
   } catch (err) {
-    console.error("❌ [ACTION] Error:", err.message, err.stack);
-    return json(
-      { error: err.message || "Internal server error" },
-      { status: 500 }
-    );
+    console.error("❌ /apps/currency-switcher/api/merchant-settings error:", err);
+    return json({ error: err.message || "Internal server error" }, { status: 500 });
   }
 }
