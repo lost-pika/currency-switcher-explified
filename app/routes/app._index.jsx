@@ -330,23 +330,27 @@ function PlacementSelector({
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSave({
-        placement,
-        fixedCorner,
-        distanceTop,
-        distanceRight,
-        distanceBottom,
-        distanceLeft,
-      });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+const handleSave = async () => {
+  console.log("▶ handleSave clicked");
+  setIsSaving(true);
+  try {
+    const payload = {
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    };
+    console.log("▶ handleSave calling onSave with:", payload);
+    await onSave(payload);
+  } catch (e) {
+    console.error("❌ handleSave error:", e);
+  } finally {
+    setIsSaving(false);
+  }
+};
+
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
