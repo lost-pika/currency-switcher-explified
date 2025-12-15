@@ -3,8 +3,8 @@ import { authenticate } from "../../shopify.server";
 import prisma from "../../db.server";
 
 export async function action({ request }) {
-  // 🔐 REQUIRED for Shopify embedded apps
-  await authenticate.admin(request);
+  const authResult = await authenticate.admin(request);
+  if (authResult instanceof Response) return authResult;
 
   const body = await request.json();
 
