@@ -1,245 +1,283 @@
-(function(){
-"use strict";
+(function () {
+  "use strict";
 
-/* ================= CONFIG ================= */
-const TTL = 1000 * 60 * 15;
-const SEL = ["[data-price]", ".price", "span.money"];
-const PICK = "__mlv_currency_picker_v2";
-const KEY  = "mlv_currency_choice_v2";
+  /* ================= CONFIG ================= */
+  const TTL = 1000 * 60 * 15;
+  const SEL = [
+    "[data-price]",
+    ".price",
+    ".product__price",
+    ".cart__price",
+    "span.money",
+  ];
 
-/* ================= UTILS ================= */
-function now(){ return Date.now(); }
+  const PICK = "__mlv_currency_picker_v2";
+  const KEY = "mlv_currency_choice_v2";
 
-function sset(k,v,ttl=TTL){
-  try{ localStorage.setItem(k, JSON.stringify({v, x: now()+ttl})); }catch(e){}
-}
-function sget(k){
-  try{
-    const r = localStorage.getItem(k);
-    if(!r) return null;
-    const o = JSON.parse(r);
-    if(!o || !o.x || now() > o.x){
-      localStorage.removeItem(k);
+  /* ================= UTILS ================= */
+  const now = () => Date.now();
+
+  function sset(k, v, ttl = TTL) {
+    try {
+      localStorage.setItem(k, JSON.stringify({ v, x: now() + ttl }));
+    } catch {}
+  }
+
+  function sget(k) {
+    try {
+      const r = localStorage.getItem(k);
+      if (!r) return null;
+      const o = JSON.parse(r);
+      if (!o || now() > o.x) {
+        localStorage.removeItem(k);
+        return null;
+      }
+      return o.v;
+    } catch {
       return null;
     }
-    return o.v;
-  }catch(e){ return null; }
-}
-
-function detect(){
-  try{
-    const n=(navigator.languages&&navigator.languages[0])||navigator.language||"en-US";
-    const lc=n.toLowerCase();
-    if(lc.includes("gb")) return "GBP";
-    if(lc.includes("in")) return "INR";
-    if(lc.includes("us")) return "USD";
-    if(lc.includes("jp")) return "JPY";
-    if(lc.includes("zh")) return "CNY";
-    if(lc.includes("au")) return "AUD";
-    return "USD";
-  }catch(e){ return "USD"; }
-}
-
-function parseNum(s){
-  if(!s || typeof s!=="string") return null;
-  const c=s.replace(/[^\d.,-]/g,"").trim();
-  if(!c) return null;
-  if(c.includes(".") && c.includes(",")) return parseFloat(c.replace(/,/g,""));
-  if(c.includes(",") && !c.includes(".")) return parseFloat(c.replace(",","."));
-  return parseFloat(c.replace(/,/g,""));
-}
-
-function fmt(v,cur){
-  try{
-    return new Intl.NumberFormat(undefined,{
-      style:"currency",
-      currency:cur,
-      maximumFractionDigits:2
-    }).format(v);
-  }catch(e){
-    return cur+" "+v.toFixed(2);
   }
-}
 
-/* ================= FETCH RATES (FIXED) ================= */
-async function fetchRates(base, targets){
-  try{
-    const k=`rates_${base}_${targets.join(",")}`;
-    const c=sget(k);
-    if(c) return c;
+  function detect() {
+    try {
+      const lang =
+        (navigator.languages && navigator.languages[0]) ||
+        navigator.language ||
+        "en-US";
+      const l = lang.toLowerCase();
 
-    const r = await fetch(
-      `/apps/currency-switcher/api/rates?base=${encodeURIComponent(base)}&symbols=${encodeURIComponent(targets.join(","))}`
-    );
-    if(!r.ok) return null;
+      if (l.includes("in")) return "INR";
+      if (l.includes("gb")) return "GBP";
+      if (l.includes("eu")) return "EUR";
+      if (l.includes("jp")) return "JPY";
+      return "USD";
+    } catch {
+      return "USD";
+    }
+  }
+
+  function parseNum(s) {
+    if (!s) return null;
+    const c = s.replace(/[^\d.,-]/g, "");
+    if (!c) return null;
+    const v = parseFloat(c.replace(/,/g, ""));
+    return isNaN(v) ? null : v;
+  }
+
+  function fmt(v, cur) {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: cur,
+        maximumFractionDigits: 2,
+      }).format(v);
+    } catch {
+      return cur + " " + v.toFixed(2);
+    }
+  }
+
+  function appOrigin() {
+    return window.location.origin;
+  }
+
+  /* ================= API ================= */
+
+  async function fetchRates(base, targets) {
+    const key = `rates_${base}_${targets.join(",")}`;
+    const cached = sget(key);
+    if (cached) return cached;
+
+    const url = `${appOrigin()}/apps/currency-switcher/api/rates?base=${base}&symbols=${targets.join(",")}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
 
     const j = await r.json();
-    if(!j || !j.rates) return null;
+    if (!j || !j.rates) return null;
 
-    sset(k, j.rates);
+    sset(key, j.rates);
     return j.rates;
-  }catch(e){ return null; }
-}
+  }
 
-/* ================= LOAD SETTINGS ================= */
-async function loadSettings(){
-  try{
-    const shop = window.__MLV_SHOP__ || location.hostname;
-    const r = await fetch(
-      `/apps/currency-switcher/api/merchant-settings?shop=${encodeURIComponent(shop)}`
+  async function loadSettings() {
+    try {
+      const shop =
+        window.__MLV_SHOP__ ||
+        Shopify?.shop ||
+        window.location.hostname;
+
+      const url = `${appOrigin()}/apps/currency-switcher/api/merchant-settings?shop=${encodeURIComponent(
+        shop,
+      )}`;
+
+      const r = await fetch(url);
+      if (!r.ok) return null;
+
+      return await r.json();
+    } catch {
+      return null;
+    }
+  }
+
+  /* ================= DOM ================= */
+
+  function findNodes() {
+    const s = new Set();
+    SEL.forEach((q) =>
+      document.querySelectorAll(q).forEach((e) => s.add(e)),
     );
-    if(!r.ok) return null;
-    return await r.json();
-  }catch(e){ return null; }
-}
+    return [...s];
+  }
 
-/* ================= DOM ================= */
-function findNodes(){
-  const s=new Set();
-  SEL.forEach(q=>document.querySelectorAll(q).forEach(e=>s.add(e)));
-  return Array.from(s);
-}
+  function convertEl(el, rate, cur) {
+    if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
+    const n = parseNum(el.dataset.orig);
+    if (n === null) return;
+    el.textContent = fmt(n * rate, cur);
+  }
 
-function convertEl(el,rate,cur){
-  if(!el) return;
-  if(!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-  const n=parseNum(el.dataset.orig);
-  if(n===null) return;
-  el.textContent = fmt(n*rate,cur);
-}
+  function revertEl(el) {
+    if (el.dataset.orig) el.textContent = el.dataset.orig;
+  }
 
-function revertEl(el){
-  if(el?.dataset?.orig) el.textContent = el.dataset.orig;
-}
+  /* ================= STYLES ================= */
 
-/* ================= CSS (GAP FIXED) ================= */
-function injectCSS(){
-  if(document.getElementById("__mlv_curr_css")) return;
-  const css = `
+  function injectCSS() {
+    if (document.getElementById("__mlv_css")) return;
+
+    const css = `
 #${PICK}{
   position:fixed;
   z-index:2147483647;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  font-family:system-ui;
 }
 #${PICK} button{
-  padding:8px 22px 8px 10px; /* ✅ more gap for arrow */
+  padding:8px 28px 8px 12px; /* ⬅️ GAP BETWEEN TEXT & ARROW */
   border-radius:10px;
   border:1px solid rgba(0,0,0,.15);
   background:#fff;
   cursor:pointer;
-  min-width:64px;
   position:relative;
+  font-weight:500;
 }
 #${PICK} button::after{
   content:"▾";
   position:absolute;
-  right:8px;                /* ✅ moved arrow right */
+  right:10px;
   top:50%;
   transform:translateY(-50%);
 }
 [data-mlv-menu]{
   position:fixed;
-  min-width:120px;
   background:#fff;
-  border:1px solid rgba(0,0,0,.12);
   border-radius:8px;
-  padding:6px;
+  border:1px solid rgba(0,0,0,.15);
   box-shadow:0 12px 30px rgba(0,0,0,.12);
   display:none;
   z-index:2147483647;
+}
+[data-mlv-menu] div{
+  padding:8px 12px;
+  cursor:pointer;
+}
+[data-mlv-menu] div:hover{
+  background:#f2f2f2;
 }`;
-  const s=document.createElement("style");
-  s.id="__mlv_curr_css";
-  s.textContent=css;
-  document.head.appendChild(s);
-}
+    const s = document.createElement("style");
+    s.id = "__mlv_css";
+    s.textContent = css;
+    document.head.appendChild(s);
+  }
 
-/* ================= PLACEMENT ================= */
-function applyPlacement(w,st){
-  const fc = st?.fixedCorner || "top-right"; // ✅ default TOP-RIGHT
-  const t=st?.distanceTop??16,
-        r=st?.distanceRight??16,
-        b=st?.distanceBottom??16,
-        l=st?.distanceLeft??16;
+  /* ================= PICKER ================= */
 
-  w.style.top    = fc.includes("top")    ? t+"px" : "auto";
-  w.style.bottom = fc.includes("bottom") ? b+"px" : "auto";
-  w.style.left   = fc.includes("left")   ? l+"px" : "auto";
-  w.style.right  = fc.includes("right")  ? r+"px" : "auto";
-}
+  function applyPlacement(el, st) {
+    const corner = st?.fixedCorner || "top-right"; // ✅ DEFAULT FIX
+    const t = st?.distanceTop ?? 16;
+    const r = st?.distanceRight ?? 16;
+    const b = st?.distanceBottom ?? 16;
+    const l = st?.distanceLeft ?? 16;
 
-/* ================= PICKER ================= */
-function createPicker(st,cur,onSel){
-  document.getElementById(PICK)?.remove();
+    el.style.top = corner.includes("top") ? `${t}px` : "auto";
+    el.style.bottom = corner.includes("bottom") ? `${b}px` : "auto";
+    el.style.right = corner.includes("right") ? `${r}px` : "auto";
+    el.style.left = corner.includes("left") ? `${l}px` : "auto";
+  }
 
-  const w=document.createElement("div");
-  w.id=PICK;
+  function createPicker(st, cur, onSel) {
+    document.getElementById(PICK)?.remove();
 
-  const b=document.createElement("button");
-  b.textContent=cur;
+    const w = document.createElement("div");
+    w.id = PICK;
 
-  const m=document.createElement("div");
-  m.setAttribute("data-mlv-menu","");
+    const b = document.createElement("button");
+    b.textContent = cur;
 
-  (st?.selectedCurrencies||[cur]).forEach(c=>{
-    const d=document.createElement("div");
-    d.textContent=c;
-    d.style.padding="6px 8px";
-    d.style.cursor="pointer";
-    d.onclick=e=>{
+    const m = document.createElement("div");
+    m.setAttribute("data-mlv-menu", "");
+
+    (st?.selectedCurrencies || [cur]).forEach((c) => {
+      const d = document.createElement("div");
+      d.textContent = c;
+      d.onclick = (e) => {
+        e.stopPropagation();
+        m.style.display = "none";
+        b.textContent = c;
+        onSel(c);
+      };
+      m.appendChild(d);
+    });
+
+    b.onclick = (e) => {
       e.stopPropagation();
-      b.textContent=c;
-      m.style.display="none";
-      onSel(c);
+      const r = b.getBoundingClientRect();
+      m.style.display = "block";
+      m.style.left = `${r.left}px`;
+      m.style.top = `${r.bottom + 8}px`;
+      m.style.minWidth = `${r.width}px`;
     };
-    m.appendChild(d);
-  });
 
-  b.onclick=e=>{
-    e.stopPropagation();
-    const r=b.getBoundingClientRect();
-    m.style.display="block";
-    m.style.left=r.left+"px";
-    m.style.top=(r.bottom+8)+"px";
-    m.style.width=r.width+"px";
-  };
+    document.addEventListener("click", () => (m.style.display = "none"));
 
-  document.addEventListener("click",()=>m.style.display="none");
+    w.appendChild(b);
+    document.body.appendChild(w);
+    document.body.appendChild(m);
 
-  w.appendChild(b);
-  document.body.appendChild(w);
-  document.body.appendChild(m);
+    applyPlacement(w, st);
+  }
 
-  applyPlacement(w,st);
-}
+  /* ================= MAIN ================= */
 
-/* ================= RUN ================= */
-async function runFor(c,st){
-  const base = st?.baseCurrency || "USD";
-  if(base===c){ findNodes().forEach(revertEl); return; }
+  async function runFor(cur, st) {
+    const base = st?.baseCurrency || "USD";
+    if (cur === base) {
+      findNodes().forEach(revertEl);
+      return;
+    }
 
-  const r = await fetchRates(base,[c]);
-  if(!r||!r[c]) return;
+    const rates = await fetchRates(base, [cur]);
+    if (!rates || !rates[cur]) return;
 
-  findNodes().forEach(e=>convertEl(e,r[c],c));
-}
+    findNodes().forEach((e) => convertEl(e, rates[cur], cur));
+  }
 
-async function init(){
-  injectCSS();
-  const st = await loadSettings() || {};
-  const def = st.defaultCurrency || detect();
-  const cur = localStorage.getItem(KEY) || def;
+  async function init() {
+    injectCSS();
 
-  createPicker(st,cur,async c=>{
-    localStorage.setItem(KEY,c);
-    await runFor(c,st);
-  });
+    const st = (await loadSettings()) || {};
+    const detected = detect();
+    const def = st.defaultCurrency || detected;
 
-  await runFor(cur,st);
-}
+    const saved = localStorage.getItem(KEY) || def;
 
-document.readyState==="loading"
-  ? document.addEventListener("DOMContentLoaded",init)
-  : init();
+    createPicker(st, saved, async (c) => {
+      localStorage.setItem(KEY, c);
+      await runFor(c, st);
+    });
 
+    await runFor(saved, st);
+  }
+
+  document.readyState === "loading"
+    ? document.addEventListener("DOMContentLoaded", init)
+    : init();
 })();
