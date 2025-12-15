@@ -743,20 +743,17 @@ export default function SettingsRoute() {
 
 const handleStep2Save = useCallback(
   async (data) => {
-    console.log("🔥 handleStep2Save START", data);
+    console.log("🔥 [Step2Save] START with data:", data);
 
     if (!shop) {
-      console.error("❌ Shop missing, aborting save");
+      console.error("❌ [Step2Save] Shop missing, aborting save");
       return;
     }
 
-    /* -------------------------------------------------
-       1️⃣ Normalize placement for backend
-    ------------------------------------------------- */
+    // ✅ Normalize placement
     let normalizedPlacement;
-
     if (data.placement === "Fixed Position") {
-      normalizedPlacement = data.fixedCorner; // bottom-right etc
+      normalizedPlacement = data.fixedCorner;
     } else if (data.placement === "Inline with the header") {
       normalizedPlacement = "inline";
     } else if (data.placement === "Don't show at all") {
@@ -765,67 +762,65 @@ const handleStep2Save = useCallback(
       normalizedPlacement = "bottom-right";
     }
 
-    /* -------------------------------------------------
-       2️⃣ Build backend payload (MATCHES API)
-    ------------------------------------------------- */
+    // ✅ BUILD EXACT PAYLOAD (MATCHES BACKEND SCHEMA)
     const payload = {
       shop,
-      currencies: step1Data.currencies,      // ✅ normalized
+      currencies: step1Data.currencies,       // ✅ ARRAY like ["USD", "EUR"]
       defaultCurrency: step1Data.defaultCurrency,
       baseCurrency: "USD",
-
       placement: normalizedPlacement,
       fixedCorner: data.fixedCorner,
-
       distanceTop: data.distanceTop,
       distanceRight: data.distanceRight,
       distanceBottom: data.distanceBottom,
       distanceLeft: data.distanceLeft,
     };
 
-    console.log("📝 [Step2] Sending payload:", payload);
+    console.log("📝 [Step2Save] Payload to send:", payload);
 
-    /* -------------------------------------------------
-       3️⃣ Save to backend
-    ------------------------------------------------- */
-    const res = await fetch("/app/api/merchant-settings", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
+    try {
+      // ✅ POST TO API
+      const res = await fetch("/app/api/merchant-settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
+      const responseData = await res.json();
+      console.log("📊 [Step2Save] Response status:", res.status);
+      console.log("📊 [Step2Save] Response body:", responseData);
 
-    const responseText = await res.text();
-    console.log("📝 [Step2] Response:", res.status, responseText);
+      if (!res.ok) {
+        console.error("❌ [Step2Save] API returned error:", responseData);
+        alert(`Save failed: ${responseData.error}`);
+        return;
+      }
 
-    if (!res.ok) {
-  console.error("❌ Save failed:", responseText);
-  return; // ⬅️ IMPORTANT: don't throw
-}
+      console.log("✅ [Step2Save] API success, updating local state");
 
+      // ✅ PERSIST LOCALLY
+      setStep1Data((prev) => ({
+        ...prev,
+        placement: normalizedPlacement,
+        fixedCorner: data.fixedCorner,
+        distanceTop: data.distanceTop,
+        distanceRight: data.distanceRight,
+        distanceBottom: data.distanceBottom,
+        distanceLeft: data.distanceLeft,
+      }));
 
-    /* -------------------------------------------------
-       4️⃣ Persist state locally (IMPORTANT)
-    ------------------------------------------------- */
-    setStep1Data((prev) => ({
-      ...prev,
-      placement: normalizedPlacement,
-      fixedCorner: data.fixedCorner,
-      distanceTop: data.distanceTop,
-      distanceRight: data.distanceRight,
-      distanceBottom: data.distanceBottom,
-      distanceLeft: data.distanceLeft,
-    }));
-
-    console.log("✅ [Step2] Settings saved successfully");
-
-    /* -------------------------------------------------
-       5️⃣ Move to confirmation screen
-    ------------------------------------------------- */
-    setStep(3);
+      console.log("✅ [Step2Save] Moving to confirmation screen");
+      setStep(3);
+    } catch (err) {
+      console.error("❌ [Step2Save] Network/parsing error:", err);
+      alert(`Error: ${err.message}`);
+    }
   },
   [shop, step1Data],
 );
+
 
 
 

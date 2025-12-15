@@ -31,10 +31,12 @@ export async function action({ request }) {
     if (method === "POST") {
       const body = await request.json();
 
+      console.log("📨 [API POST] Raw body received:", body);
+
       const {
         shop = defaultShop,
-        currencies,
-        defaultCurrency,
+        currencies = [],           // ✅ EXPECTS THIS KEY
+        defaultCurrency = "USD",
         baseCurrency = "USD",
         placement = "Fixed Position",
         fixedCorner = "bottom-right",
@@ -44,10 +46,39 @@ export async function action({ request }) {
         distanceLeft = 16,
       } = body;
 
-      if (!shop || !currencies || !Array.isArray(currencies) || !defaultCurrency) {
-        return jsonResponse({ error: "Missing required fields" }, 400);
+      console.log("🔍 [API POST] Parsed values:", {
+        shop,
+        currencies,
+        defaultCurrency,
+      });
+
+      // ✅ VALIDATION (Clear error messages)
+      if (!shop || !Array.isArray(currencies) || currencies.length === 0) {
+        console.error("❌ [API POST] Validation failed:", {
+          shop: shop || "MISSING",
+          currencies: currencies || "NOT_ARRAY",
+          length: currencies?.length || 0,
+        });
+        return jsonResponse(
+          {
+            ok: false,
+            error: "Missing required fields: shop, currencies (array)",
+          },
+          400,
+        );
       }
 
+      if (!defaultCurrency) {
+        console.error("❌ [API POST] Missing defaultCurrency");
+        return jsonResponse(
+          { ok: false, error: "Missing defaultCurrency" },
+          400,
+        );
+      }
+
+      console.log("✅ [API POST] Validation passed, saving to DB...");
+
+      // ✅ UPSERT TO DB
       const saved = await prisma.merchantSettings.upsert({
         where: { shop },
         update: {
@@ -75,16 +106,26 @@ export async function action({ request }) {
         },
       });
 
-      console.log("✅ merchant-settings POST saved for shop:", shop);
-      return jsonResponse(saved, 200);
+      console.log("✅ [API POST] Saved to DB:", saved);
+
+      return jsonResponse(
+        {
+          ok: true,
+          message: "Settings saved successfully",
+          data: saved,
+        },
+        200,
+      );
     }
 
     if (method === "GET") {
       const url = new URL(request.url);
       const shop = url.searchParams.get("shop") || defaultShop;
 
+      console.log("📨 [API GET] shop param:", shop);
+
       if (!shop) {
-        return jsonResponse({ error: "Shop not provided" }, 400);
+        return jsonResponse({ ok: false, error: "Shop not provided" }, 400);
       }
 
       const saved = await prisma.merchantSettings.findUnique({
@@ -92,36 +133,45 @@ export async function action({ request }) {
       });
 
       if (saved) {
-        console.log("✅ merchant-settings GET found for shop:", shop);
-        return jsonResponse(saved, 200);
+        console.log("✅ [API GET] Found in DB:", saved);
+        return jsonResponse({ ok: true, data: saved }, 200);
       }
 
-      console.log("⚠️ merchant-settings GET no record, sending defaults");
+      console.log("⚠️ [API GET] Not found, returning defaults");
       return jsonResponse(
         {
-          shop,
-          selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
-          defaultCurrency: "INR",
-          baseCurrency: "USD",
-          placement: "Fixed Position",
-          fixedCorner: "bottom-right",
-          distanceTop: 16,
-          distanceRight: 16,
-          distanceBottom: 16,
-          distanceLeft: 16,
+          ok: true,
+          data: {
+            shop,
+            selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+            defaultCurrency: "INR",
+            baseCurrency: "USD",
+            placement: "Fixed Position",
+            fixedCorner: "bottom-right",
+            distanceTop: 16,
+            distanceRight: 16,
+            distanceBottom: 16,
+            distanceLeft: 16,
+          },
         },
         200,
       );
     }
 
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
   } catch (err) {
-    console.error("❌ merchant-settings error:", err);
-    return jsonResponse({ error: err?.message || "Internal error" }, 500);
+    console.error("❌ [API ERROR]:", err);
+    return jsonResponse(
+      {
+        ok: false,
+        error: err?.message || "Internal server error",
+        stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
+      },
+      500,
+    );
   }
 }
 
-// Remix loader
 export async function loader(args) {
   return action(args);
 }
