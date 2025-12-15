@@ -1,34 +1,11 @@
 import { json } from "@remix-run/node";
-import prisma from "../db.server";
-
-export async function loader({ request }) {
-  const url = new URL(request.url);
-  const shop = url.searchParams.get("shop");
-
-  if (!shop) {
-    return json({ error: "Shop is required" }, { status: 400 });
-  }
-
-  const row = await prisma.merchantSettings.findUnique({
-    where: { shop },
-  });
-
-  return json(
-    row || {
-      selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
-      defaultCurrency: "INR",
-      baseCurrency: "USD",
-      placement: "bottom-right",
-      fixedCorner: "bottom-left",
-      distanceTop: 16,
-      distanceRight: 16,
-      distanceBottom: 16,
-      distanceLeft: 16,
-    }
-  );
-}
+import { authenticate } from "../../shopify.server";
+import prisma from "../../db.server";
 
 export async function action({ request }) {
+  // 🔐 REQUIRED for Shopify embedded apps
+  await authenticate.admin(request);
+
   const body = await request.json();
 
   const {
