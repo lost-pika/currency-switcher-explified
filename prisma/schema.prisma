@@ -32,18 +32,20 @@ model Session {
 }
 
 model MerchantSettings {
-  id                Int     @id @default(autoincrement())
-  shop              String  @unique
-  selectedCurrencies Json
-  defaultCurrency   String
-  baseCurrency      String?  
-  placement         String?
-  fixedCorner       String?
-  distanceTop       Int? 
-  distanceRight     Int?
-  distanceBottom    Int?
-  distanceLeft      Int?
-  updatedAt         DateTime @updatedAt
-  createdAt         DateTime @default(now())
-}
+  id                    String   @id @default(cuid())
+  shop                  String   @unique
+  selectedCurrencies    String[] @default(["USD", "EUR"])
+  defaultCurrency       String   @default("USD")
+  baseCurrency          String   @default("USD")
+  placement             String   @default("Fixed Position")
+  fixedCorner           String   @default("bottom-right")
+  distanceTop           Int      @default(16)
+  distanceRight         Int      @default(16)
+  distanceBottom        Int      @default(16)
+  distanceLeft          Int      @default(16)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
+  @@index([shop])
+  @@map("merchant_settings")
+}
