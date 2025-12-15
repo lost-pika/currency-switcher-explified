@@ -18,13 +18,14 @@ export async function action({ request }) {
 
     if (method === "POST") {
       const body = await request.json();
+
       const {
         shop = sessionShop,
         currencies,
         defaultCurrency,
         baseCurrency = "USD",
-        placement,
-        fixedCorner,
+        placement = "bottom-right",
+        fixedCorner = "bottom-right",
         distanceTop = 16,
         distanceRight = 16,
         distanceBottom = 16,
@@ -82,13 +83,15 @@ export async function action({ request }) {
         );
       }
 
-      const saved = await prisma.merchantSettings.findUnique({ where: { shop } });
+      const saved = await prisma.merchantSettings.findUnique({
+        where: { shop },
+      });
 
       if (saved) {
-        return new Response(
-          JSON.stringify(saved),
-          { status: 200, headers: CORS_HEADERS },
-        );
+        return new Response(JSON.stringify(saved), {
+          status: 200,
+          headers: CORS_HEADERS,
+        });
       }
 
       return new Response(

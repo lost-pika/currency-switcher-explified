@@ -81,10 +81,10 @@ function CurrencySelector({
 
   const handleSaveAndNext = () => {
     const dataToSave = {
-      selectedCurrencies: selectedCodes,
-      defaultCurrency: defaultCode,
-      placement: "bottom-right",
-    };
+  currencies: selectedCodes,
+  defaultCurrency: defaultCode,
+};
+
     console.log("💾 [Step1] Data being sent:", dataToSave);
     onNext(dataToSave);
   };
@@ -714,7 +714,17 @@ export default function SettingsRoute() {
 
         const json = await res.json();
         console.log("✅ Settings loaded:", json);
-        setStep1Data(json);
+        setStep1Data({
+  currencies: json.selectedCurrencies ?? [],
+  defaultCurrency: json.defaultCurrency ?? "INR",
+  placement: json.placement ?? "bottom-right",
+  fixedCorner: json.fixedCorner ?? "bottom-right",
+  distanceTop: json.distanceTop ?? 16,
+  distanceRight: json.distanceRight ?? 16,
+  distanceBottom: json.distanceBottom ?? 16,
+  distanceLeft: json.distanceLeft ?? 16,
+});
+
       } catch (err) {
         console.error("❌ Error loading settings:", err.message);
         setStep1Data({
@@ -739,53 +749,91 @@ const handleStep2Save = useCallback(
   async (data) => {
     console.log("🔥 handleStep2Save START", data);
 
+    if (!shop) {
+      console.error("❌ Shop missing, aborting save");
+      return;
+    }
+
+    /* -------------------------------------------------
+       1️⃣ Normalize placement for backend
+    ------------------------------------------------- */
     let normalizedPlacement;
+
     if (data.placement === "Fixed Position") {
-      normalizedPlacement = data.fixedCorner;
+      normalizedPlacement = data.fixedCorner; // bottom-right etc
     } else if (data.placement === "Inline with the header") {
       normalizedPlacement = "inline";
     } else if (data.placement === "Don't show at all") {
       normalizedPlacement = "hidden";
+    } else {
+      normalizedPlacement = "bottom-right";
     }
 
+    /* -------------------------------------------------
+       2️⃣ Build backend payload (MATCHES API)
+    ------------------------------------------------- */
     const payload = {
       shop,
-      currencies: step1Data.selectedCurrencies,
+      currencies: step1Data.currencies,      // ✅ normalized
       defaultCurrency: step1Data.defaultCurrency,
       baseCurrency: "USD",
+
       placement: normalizedPlacement,
       fixedCorner: data.fixedCorner,
+
       distanceTop: data.distanceTop,
       distanceRight: data.distanceRight,
       distanceBottom: data.distanceBottom,
       distanceLeft: data.distanceLeft,
     };
 
-    console.log("📝 [Step2] Sending to backend:", payload);
-    console.log("URL:", "/apps/currency-switcher/api/merchant-settings");
+    console.log("📝 [Step2] Sending payload:", payload);
 
-    // ❗ No try/catch here
-    const res = await fetch("/apps/currency-switcher/api/merchant-settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "omit",
-      body: JSON.stringify(payload),
-    });
+    /* -------------------------------------------------
+       3️⃣ Save to backend
+    ------------------------------------------------- */
+    const res = await fetch(
+      "/apps/currency-switcher/api/merchant-settings",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
+        body: JSON.stringify(payload),
+      },
+    );
 
-    console.log("📝 [Step2] Got response object:", res);
-
-    const text = await res.text();
-    console.log("📝 [Step2] Response text:", res.status, text);
+    const responseText = await res.text();
+    console.log("📝 [Step2] Response:", res.status, responseText);
 
     if (!res.ok) {
-      throw new Error(text || `Save failed: ${res.status}`);
+      throw new Error(
+        responseText || `Save failed with status ${res.status}`,
+      );
     }
 
+    /* -------------------------------------------------
+       4️⃣ Persist state locally (IMPORTANT)
+    ------------------------------------------------- */
+    setStep1Data((prev) => ({
+      ...prev,
+      placement: normalizedPlacement,
+      fixedCorner: data.fixedCorner,
+      distanceTop: data.distanceTop,
+      distanceRight: data.distanceRight,
+      distanceBottom: data.distanceBottom,
+      distanceLeft: data.distanceLeft,
+    }));
+
     console.log("✅ [Step2] Settings saved successfully");
+
+    /* -------------------------------------------------
+       5️⃣ Move to confirmation screen
+    ------------------------------------------------- */
     setStep(3);
   },
-  [step1Data, shop],
+  [shop, step1Data],
 );
+
 
 
   if (loading) {
@@ -805,7 +853,7 @@ const handleStep2Save = useCallback(
     return (
       <CurrencySelector
         onNext={handleStep1Save}
-        initialSelected={step1Data.selectedCurrencies || DEFAULT_SELECTED}
+        initialSelected={step1Data.currencies || DEFAULT_SELECTED}
         initialDefault={step1Data.defaultCurrency || "INR"}
       />
     );
