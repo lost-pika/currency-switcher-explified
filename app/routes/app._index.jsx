@@ -788,15 +788,12 @@ const handleStep2Save = useCallback(
     /* -------------------------------------------------
        3️⃣ Save to backend
     ------------------------------------------------- */
-    const res = await fetch(
-      "/apps/currency-switcher/api/merchant-settings",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "omit",
-        body: JSON.stringify(payload),
-      },
-    );
+    const res = await fetch("/apps/currency-switcher/api/merchant-settings", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+});
+
 
     const responseText = await res.text();
     console.log("📝 [Step2] Response:", res.status, responseText);
