@@ -737,6 +737,7 @@ export default function SettingsRoute() {
 
   const handleStep2Save = useCallback(
     async (data) => {
+      console.log("🔥 handleStep2Save START", data);
       let normalizedPlacement;
 
       if (data.placement === "Fixed Position") {
@@ -761,6 +762,7 @@ export default function SettingsRoute() {
       };
 
       console.log("📝 [Step2] Sending to backend:", payload);
+      console.log("URL:", "/apps/currency-switcher/api/merchant-settings");
 
       try {
         const res = await fetch(
