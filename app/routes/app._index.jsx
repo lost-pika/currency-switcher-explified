@@ -652,7 +652,7 @@ export default function SettingsRoute() {
 
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState({
-    selectedCurrencies: [],
+    currencies: [],
     defaultCurrency: "",
   });
   const [loading, setLoading] = useState(true);
@@ -687,7 +687,7 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl = `/apps/currency-switcher/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
+        const apiUrl = `/app/api/merchant-settings?shop=${encodeURIComponent(shop)}`;
         console.log("🌐 Fetching from:", apiUrl);
 
         const res = await fetch(apiUrl, { credentials: "omit" });
@@ -788,7 +788,7 @@ const handleStep2Save = useCallback(
     /* -------------------------------------------------
        3️⃣ Save to backend
     ------------------------------------------------- */
-    const res = await fetch("/apps/currency-switcher/api/merchant-settings", {
+    const res = await fetch("/app/api/merchant-settings", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(payload),
