@@ -750,7 +750,7 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
-  const handleStep2Save = useCallback(
+const handleStep2Save = useCallback(
   async (data) => {
     console.log("🔥 [Step2Save] START with data:", data);
 
@@ -790,7 +790,7 @@ export default function SettingsRoute() {
       console.log("📡 [Step2Save] Sending POST to /app/api/merchant-settings");
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sec timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const res = await fetch("/app/api/merchant-settings", {
         method: "POST",
@@ -803,30 +803,23 @@ export default function SettingsRoute() {
 
       console.log("📊 [Step2Save] Response received, status:", res.status);
 
-      let responseData = null;
-      try {
-        responseData = await res.json();
-        console.log("📊 [Step2Save] Parsed JSON:", responseData);
-      } catch (parseErr) {
-        console.error("❌ [Step2Save] JSON parse error:", parseErr);
-        const text = await res.text();
-        console.log("Raw response text:", text);
-        alert(`Response parse error: ${parseErr.message}`);
-        return;
-      }
-
       if (!res.ok) {
-        console.error("❌ [Step2Save] API returned non-OK status:", res.status);
-        alert(`API Error ${res.status}: ${responseData?.error || "Unknown error"}`);
+        let errBody = null;
+        try {
+          errBody = await res.json();
+        } catch {
+          errBody = await res.text();
+        }
+        console.error("❌ [Step2Save] API error body:", errBody);
+        alert(
+          `API Error ${res.status}: ${
+            errBody?.error || JSON.stringify(errBody) || "Unknown error"
+          }`,
+        );
         return;
       }
 
-      if (!responseData?.ok) {
-        console.error("❌ [Step2Save] API ok flag false:", responseData);
-        alert(`API Error: ${responseData?.error || "Unknown error"}`);
-        return;
-      }
-
+      const responseData = await res.json();
       console.log("✅ [Step2Save] Success! Response:", responseData);
 
       setStep1Data((prev) => ({
@@ -852,6 +845,7 @@ export default function SettingsRoute() {
   },
   [shop, step1Data],
 );
+
 
 
   if (loading) {
