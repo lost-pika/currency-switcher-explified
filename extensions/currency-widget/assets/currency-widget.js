@@ -2,7 +2,7 @@
   "use strict";
 
   /* ================= CONFIG ================= */
-  const API_BASE = window.location.origin;
+  const API_HOST = "https://currency-switcher-explified.vercel.app";
   const TTL = 1000 * 60 * 15; // 15 min cache
 
   const SEL = [
@@ -102,15 +102,14 @@
       return cached;
     }
 
-    // IMPORTANT: correct public path for Remix API behind Shopify proxy
-    const url = `${API_BASE}/app/api/rates?base=${encodeURIComponent(
-  base,
-)}&symbols=${encodeURIComponent(targets.join(","))}`;
+    const url = `${API_HOST}/app/api/rates?base=${encodeURIComponent(
+      base,
+    )}&symbols=${encodeURIComponent(targets.join(","))}`;
 
     console.log("📊 Fetching rates from:", url);
 
     try {
-      const r = await fetch(url);
+      const r = await fetch(url, { mode: "cors" });
       if (!r.ok) {
         console.error("❌ rates fetch failed", r.status, r.statusText);
         return {};
@@ -141,12 +140,12 @@
 
       console.log("🏪 Shop:", shop);
 
-      const url = `${API_BASE}/apps/currency-switcher-app-2/app/api/settings?shop=${encodeURIComponent(
+      const url = `${API_HOST}/app/api/settings?shop=${encodeURIComponent(
         shop,
       )}`;
       console.log("🔗 Loading settings from:", url);
 
-      const r = await fetch(url);
+      const r = await fetch(url, { mode: "cors" });
       if (!r.ok) {
         console.warn(
           "⚠️ settings fetch failed",
@@ -166,7 +165,8 @@
       return {
         selectedCurrencies:
           data.selectedCurrencies || FALLBACK_SETTINGS.selectedCurrencies,
-        defaultCurrency: data.defaultCurrency || FALLBACK_SETTINGS.defaultCurrency,
+        defaultCurrency:
+          data.defaultCurrency || FALLBACK_SETTINGS.defaultCurrency,
         baseCurrency: data.baseCurrency || FALLBACK_SETTINGS.baseCurrency,
         placement: data.placement || FALLBACK_SETTINGS.placement,
         fixedCorner: data.fixedCorner || FALLBACK_SETTINGS.fixedCorner,
@@ -323,7 +323,6 @@
 
     w.appendChild(b);
 
-    // Inline with header: top-right inside header (fallback fixed top-right)
     if (st?.placement === "Inline with the header") {
       const header =
         document.querySelector("header") ||
@@ -352,7 +351,6 @@
       w.style.right = `${st.distanceRight ?? 16}px`;
       document.body.appendChild(w);
     } else {
-      // fallback: fixed top-right
       w.style.position = "fixed";
       w.style.top = `${st.distanceTop ?? 16}px`;
       w.style.right = `${st.distanceRight ?? 16}px`;
