@@ -707,7 +707,12 @@ export default function SettingsRoute() {
           setStep1Data({
             currencies: DEFAULT_SELECTED,
             defaultCurrency: "INR",
-            placement: "bottom-right",
+            placement: "fixed",
+            fixedCorner: "bottom-right",
+            distanceTop: 16,
+            distanceRight: 16,
+            distanceBottom: 16,
+            distanceLeft: 16,
           });
           setLoading(false);
           return;
@@ -721,7 +726,7 @@ export default function SettingsRoute() {
         setStep1Data({
           currencies: data.selectedCurrencies ?? DEFAULT_SELECTED,
           defaultCurrency: data.defaultCurrency ?? "INR",
-          placement: data.placement ?? "bottom-right",
+          placement: data.placement ?? "fixed",
           fixedCorner: data.fixedCorner ?? "bottom-right",
           distanceTop: data.distanceTop ?? 16,
           distanceRight: data.distanceRight ?? 16,
@@ -733,7 +738,12 @@ export default function SettingsRoute() {
         setStep1Data({
           currencies: DEFAULT_SELECTED,
           defaultCurrency: "INR",
-          placement: "bottom-right",
+          placement: "fixed",
+          fixedCorner: "bottom-right",
+          distanceTop: 16,
+          distanceRight: 16,
+          distanceBottom: 16,
+          distanceLeft: 16,
         });
       } finally {
         setLoading(false);
@@ -758,26 +768,25 @@ export default function SettingsRoute() {
       }
 
       const normalizedPlacement =
-  data.placement === "Fixed Position"
-    ? "fixed"
-    : data.placement === "Inline with the header"
-    ? "inline"
-    : "hidden";
+        data.placement === "Fixed Position"
+          ? "fixed"
+          : data.placement === "Inline with the header"
+          ? "inline"
+          : "hidden";
 
-const payload = {
-  shop,
-  currencies: step1Data.currencies,
-  defaultCurrency: step1Data.defaultCurrency,
-  baseCurrency: "USD",
-  placement: normalizedPlacement, // ✅ fixed | inline | hidden
-  fixedCorner:
-    normalizedPlacement === "fixed" ? data.fixedCorner : null,
-  distanceTop: data.distanceTop,
-  distanceRight: data.distanceRight,
-  distanceBottom: data.distanceBottom,
-  distanceLeft: data.distanceLeft,
-};
-
+      const payload = {
+        shop,
+        currencies: step1Data.currencies,
+        defaultCurrency: step1Data.defaultCurrency,
+        baseCurrency: "USD",
+        placement: normalizedPlacement,
+        fixedCorner:
+          normalizedPlacement === "fixed" ? data.fixedCorner : null,
+        distanceTop: data.distanceTop,
+        distanceRight: data.distanceRight,
+        distanceBottom: data.distanceBottom,
+        distanceLeft: data.distanceLeft,
+      };
 
       console.log("📝 [Step2Save] Payload:", payload);
 
@@ -838,12 +847,11 @@ const payload = {
 
   if (step === 2) {
     const normalizePlacementForUI = (placement) => {
-  if (placement === "fixed") return "Fixed Position";
-  if (placement === "inline") return "Inline with the header";
-  if (placement === "hidden") return "Don't show at all";
-  return "Fixed Position";
-};
-
+      if (placement === "fixed") return "Fixed Position";
+      if (placement === "inline") return "Inline with the header";
+      if (placement === "hidden") return "Don't show at all";
+      return "Fixed Position";
+    };
 
     return (
       <PlacementSelector
