@@ -789,22 +789,17 @@ const handleStep2Save = useCallback(
     try {
       console.log("📡 [Step2Save] Sending POST to /app/api/merchant-settings");
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-
       const res = await fetch("/app/api/merchant-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        signal: controller.signal,
+        credentials: "include",
       });
-
-      clearTimeout(timeoutId);
 
       console.log("📊 [Step2Save] Response received, status:", res.status);
 
       if (!res.ok) {
-        let errBody = null;
+        let errBody;
         try {
           errBody = await res.json();
         } catch {
@@ -832,19 +827,15 @@ const handleStep2Save = useCallback(
         distanceLeft: data.distanceLeft,
       }));
 
-      console.log("✅ [Step2Save] Moving to confirmation screen");
       setStep(3);
     } catch (err) {
       console.error("❌ [Step2Save] Catch error:", err);
-      if (err.name === "AbortError") {
-        alert("Request timeout - server took too long to respond");
-      } else {
-        alert(`Error: ${err.message}`);
-      }
+      alert(`Error: ${err.message}`);
     }
   },
   [shop, step1Data],
 );
+
 
 
 
