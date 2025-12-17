@@ -62,34 +62,51 @@ export async function action({ request }) {
     });
   }
 
-  const saved = await prisma.merchantSettings.upsert({
-    where: { shop },
-    update: {
-      selectedCurrencies: currencies,
-      defaultCurrency,
-      baseCurrency,
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    },
-    create: {
-      shop,
-      selectedCurrencies: currencies,
-      defaultCurrency,
-      baseCurrency,
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    },
-  });
+  try {
+    const saved = await prisma.merchantSettings.upsert({
+      where: { shop },
+      update: {
+        selectedCurrencies: currencies,
+        defaultCurrency,
+        baseCurrency,
+        placement,
+        fixedCorner,
+        distanceTop,
+        distanceRight,
+        distanceBottom,
+        distanceLeft,
+      },
+      create: {
+        shop,
+        selectedCurrencies: currencies,
+        defaultCurrency,
+        baseCurrency,
+        placement,
+        fixedCorner,
+        distanceTop,
+        distanceRight,
+        distanceBottom,
+        distanceLeft,
+      },
+    });
 
-  return new Response(JSON.stringify({ success: true, data: saved }), {
-    headers: { "Content-Type": "application/json" },
-  });
+    return new Response(JSON.stringify({ success: true, data: saved }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("❌ Prisma upsert error:", error);
+    return new Response(
+      JSON.stringify({ error: "Database error", details: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+}
+
+// Dummy export so React Router recognizes this as a real route
+export default function ApiRoute() {
+  return null;
 }
