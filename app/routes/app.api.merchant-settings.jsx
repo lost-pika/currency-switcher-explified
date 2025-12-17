@@ -1,45 +1,46 @@
-import { json } from "@remix-run/node";
+// no json import at all
 import { prisma } from "../db.server";
 
-// GET: load settings
 export async function loader({ request }) {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
 
   if (!shop) {
-    return json({ error: "Missing shop" }, { status: 400 });
-  }
-
-  const settings = await prisma.merchantSettings.findUnique({
-    where: { shop },
-  });
-
-  if (!settings) {
-    return json({
-      data: {
-        selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
-        defaultCurrency: "INR",
-        baseCurrency: "USD",
-        placement: "Fixed Position",
-        fixedCorner: "bottom-right",
-        distanceTop: 16,
-        distanceRight: 16,
-        distanceBottom: 16,
-        distanceLeft: 16,
-      },
+    return new Response(JSON.stringify({ error: "Missing shop" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
     });
   }
 
-  return json({ data: settings });
+  const settings = await prisma.merchantSettings.findUnique({ where: { shop } });
+
+  const data =
+    settings ??
+    {
+      selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+      defaultCurrency: "INR",
+      baseCurrency: "USD",
+      placement: "Fixed Position",
+      fixedCorner: "bottom-right",
+      distanceTop: 16,
+      distanceRight: 16,
+      distanceBottom: 16,
+      distanceLeft: 16,
+    };
+
+  return new Response(JSON.stringify({ data }), {
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
-// POST: save settings
 export async function action({ request }) {
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
-  const body = await request.json();
   const {
     shop,
     currencies,
@@ -51,10 +52,13 @@ export async function action({ request }) {
     distanceRight,
     distanceBottom,
     distanceLeft,
-  } = body;
+  } = await request.json();
 
   if (!shop) {
-    return json({ error: "Missing shop in payload" }, { status: 400 });
+    return new Response(JSON.stringify({ error: "Missing shop in payload" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const saved = await prisma.merchantSettings.upsert({
@@ -84,5 +88,7 @@ export async function action({ request }) {
     },
   });
 
-  return json({ success: true, data: saved });
+  return new Response(JSON.stringify({ success: true, data: saved }), {
+    headers: { "Content-Type": "application/json" },
+  });
 }
