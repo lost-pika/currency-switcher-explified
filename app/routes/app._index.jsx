@@ -760,23 +760,12 @@ const handleStep2Save = useCallback(
       return;
     }
 
-    let normalizedPlacement;
-    if (data.placement === "Fixed Position") {
-      normalizedPlacement = data.fixedCorner;
-    } else if (data.placement === "Inline with the header") {
-      normalizedPlacement = "inline";
-    } else if (data.placement === "Don't show at all") {
-      normalizedPlacement = "hidden";
-    } else {
-      normalizedPlacement = "bottom-right";
-    }
-
     const payload = {
       shop,
       currencies: step1Data.currencies,
       defaultCurrency: step1Data.defaultCurrency,
       baseCurrency: "USD",
-      placement: normalizedPlacement,
+      placement: data.placement,
       fixedCorner: data.fixedCorner,
       distanceTop: data.distanceTop,
       distanceRight: data.distanceRight,
@@ -787,8 +776,6 @@ const handleStep2Save = useCallback(
     console.log("📝 [Step2Save] Payload:", payload);
 
     try {
-      console.log("📡 [Step2Save] Sending POST to /app/api/merchant-settings");
-
       const res = await fetch("/app/api/merchant-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -796,45 +783,27 @@ const handleStep2Save = useCallback(
         credentials: "include",
       });
 
-      console.log("📊 [Step2Save] Response received, status:", res.status);
+      console.log("📊 [Step2Save] Status:", res.status);
 
       if (!res.ok) {
-        let errBody;
-        try {
-          errBody = await res.json();
-        } catch {
-          errBody = await res.text();
-        }
-        console.error("❌ [Step2Save] API error body:", errBody);
-        alert(
-          `API Error ${res.status}: ${
-            errBody?.error || JSON.stringify(errBody) || "Unknown error"
-          }`,
-        );
+        const body = await res.text();
+        console.error("❌ [Step2Save] Error body:", body);
+        alert(`API error ${res.status}`);
         return;
       }
 
-      const responseData = await res.json();
-      console.log("✅ [Step2Save] Success! Response:", responseData);
-
-      setStep1Data((prev) => ({
-        ...prev,
-        placement: normalizedPlacement,
-        fixedCorner: data.fixedCorner,
-        distanceTop: data.distanceTop,
-        distanceRight: data.distanceRight,
-        distanceBottom: data.distanceBottom,
-        distanceLeft: data.distanceLeft,
-      }));
+      const saved = await res.json();
+      console.log("✅ [Step2Save] Saved:", saved);
 
       setStep(3);
     } catch (err) {
-      console.error("❌ [Step2Save] Catch error:", err);
-      alert(`Error: ${err.message}`);
+      console.error("❌ [Step2Save] Error:", err);
+      alert(err.message);
     }
   },
   [shop, step1Data],
 );
+
 
 
 
