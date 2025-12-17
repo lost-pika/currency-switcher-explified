@@ -750,7 +750,7 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
-const handleStep2Save = useCallback(
+handleStep2Saveconst handleStep2Save = useCallback(
   async (data) => {
     console.log("🔥 [Step2Save] START with data:", data);
 
@@ -776,6 +776,8 @@ const handleStep2Save = useCallback(
     console.log("📝 [Step2Save] Payload:", payload);
 
     try {
+      console.log("📡 [Step2Save] Sending POST to /app/api/merchant-settings");
+
       const res = await fetch("/app/api/merchant-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -803,6 +805,7 @@ const handleStep2Save = useCallback(
   },
   [shop, step1Data],
 );
+
 
 
 
