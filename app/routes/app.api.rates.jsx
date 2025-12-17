@@ -1,4 +1,4 @@
-// app/routes/apps.currency-switcher.api.rates.jsx
+// app/routes/app.api.rates.jsx
 
 export async function options() {
   return new Response(null, {
@@ -26,8 +26,14 @@ function jsonResponse(obj, status = 200) {
 export async function loader({ request }) {
   try {
     const url = new URL(request.url);
+
     const base = (url.searchParams.get("base") || "USD").toUpperCase();
-    const symbolsParam = (url.searchParams.get("symbols") || "").toUpperCase();
+
+    const symbolsParam = (url.searchParams.get("symbols") || "")
+      .split(",")
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean)
+      .join(",");
 
     const remote = new URL("https://api.frankfurter.app/latest");
     remote.searchParams.set("base", base);

@@ -102,31 +102,33 @@
       return cached;
     }
 
-    const url = `${API_BASE}/apps/currency-switcher/api/rates?base=${base}&symbols=${targets.join(
-      ",",
-    )}`;
+    // IMPORTANT: correct public path for Remix API behind Shopify proxy
+    const url = `${API_BASE}/app/api/rates?base=${encodeURIComponent(
+  base,
+)}&symbols=${encodeURIComponent(targets.join(","))}`;
+
     console.log("📊 Fetching rates from:", url);
 
     try {
       const r = await fetch(url);
       if (!r.ok) {
         console.error("❌ rates fetch failed", r.status, r.statusText);
-        return null;
+        return {};
       }
 
-      const j = await r.json();
+      const j = await r.json().catch(() => null);
       console.log("✅ rates response:", j);
 
-      if (!j || !j.rates) {
+      if (!j || !j.rates || typeof j.rates !== "object") {
         console.error("❌ invalid rates payload", j);
-        return null;
+        return {};
       }
 
       sset(key, j.rates);
       return j.rates;
     } catch (err) {
       console.error("❌ rates fetch error:", err);
-      return null;
+      return {};
     }
   }
 
@@ -139,7 +141,7 @@
 
       console.log("🏪 Shop:", shop);
 
-      const url = `${API_BASE}/apps/currency-switcher/api/settings?shop=${encodeURIComponent(
+      const url = `${API_BASE}/apps/currency-switcher-app-2/app/api/settings?shop=${encodeURIComponent(
         shop,
       )}`;
       console.log("🔗 Loading settings from:", url);
@@ -154,8 +156,12 @@
         return { ...FALLBACK_SETTINGS };
       }
 
-      const data = await r.json();
+      const data = await r.json().catch(() => null);
       console.log("✅ settings loaded:", data);
+
+      if (!data || typeof data !== "object") {
+        return { ...FALLBACK_SETTINGS };
+      }
 
       return {
         selectedCurrencies:
@@ -317,16 +323,17 @@
 
     w.appendChild(b);
 
-    // Default: inline with header, top-right
+    // Inline with header: top-right inside header (fallback fixed top-right)
     if (st?.placement === "Inline with the header") {
-      // try header first, else fallback to body fixed top-right
       const header =
         document.querySelector("header") ||
         document.querySelector(".site-header") ||
         document.querySelector("#shopify-section-header");
 
       if (header) {
-        header.style.position = header.style.position || "relative";
+        if (!header.style.position || header.style.position === "static") {
+          header.style.position = "relative";
+        }
         w.style.position = "absolute";
         w.style.top = `${st.distanceTop ?? 16}px`;
         w.style.right = `${st.distanceRight ?? 16}px`;
@@ -366,8 +373,8 @@
     }
 
     const rates = await fetchRates(base, [cur]);
-    if (!rates || !rates[cur]) {
-      console.error(`❌ No rate for ${cur}`, rates);
+    if (!rates || typeof rates[cur] !== "number") {
+      console.error(`❌ No numeric rate for ${cur}`, rates);
       return;
     }
 
