@@ -3,16 +3,14 @@ import { prisma } from "../../../db.server";
 
 /* -------------------------------------------------
    GET: Load merchant settings
+   Works in production (Vercel) + local dev
 ------------------------------------------------- */
 export async function loader({ request }) {
-  // 🔐 Shopify admin authentication (REQUIRED)
-  await authenticate.admin(request);
-
-  const url = new URL(request.url);
-  const shop = url.searchParams.get("shop");
+  // ✅ App proxy / public auth (NOT admin)
+  const { shop } = await authenticate.public.appProxy(request);
 
   if (!shop) {
-    return new Response(JSON.stringify({ error: "Missing shop param" }), {
+    return new Response(JSON.stringify({ error: "Missing shop" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
@@ -45,10 +43,11 @@ export async function loader({ request }) {
 
 /* -------------------------------------------------
    POST: Save merchant settings
+   THIS IS THE FIX FOR YOUR DB ISSUE
 ------------------------------------------------- */
 export async function action({ request }) {
-  // 🔐 Shopify admin authentication (REQUIRED)
-  await authenticate.admin(request);
+  // ✅ MUST use appProxy in production
+  const { shop } = await authenticate.public.appProxy(request);
 
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -57,17 +56,17 @@ export async function action({ request }) {
     });
   }
 
-  const body = await request.json();
-
-  if (!body.shop) {
-    return new Response(JSON.stringify({ error: "Missing shop in payload" }), {
+  if (!shop) {
+    return new Response(JSON.stringify({ error: "Missing shop" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
+  const body = await request.json();
+
   const saved = await prisma.merchantSettings.upsert({
-    where: { shop: body.shop },
+    where: { shop },
     update: {
       selectedCurrencies: body.currencies,
       defaultCurrency: body.defaultCurrency,
@@ -80,7 +79,7 @@ export async function action({ request }) {
       distanceLeft: body.distanceLeft,
     },
     create: {
-      shop: body.shop,
+      shop,
       selectedCurrencies: body.currencies,
       defaultCurrency: body.defaultCurrency,
       baseCurrency: body.baseCurrency,
