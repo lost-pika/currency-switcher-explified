@@ -691,13 +691,12 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl =
-          window.location.origin +
-          "/apps/currency-switcher-app-2/app/api/merchant-settings";
-        console.log("📡 [Step2Save] POST URL:", apiUrl);
+        const apiUrl = `/app/api/merchant-settings?shop=${encodeURIComponent(
+          shop,
+        )}`;
         console.log("🌐 Fetching from:", apiUrl);
 
-        const res = await fetch(apiUrl, { credentials: "omit" });
+        const res = await fetch(apiUrl, { credentials: "include" });
 
         if (!res.ok) {
           console.warn(
@@ -774,9 +773,7 @@ export default function SettingsRoute() {
       console.log("📝 [Step2Save] Payload:", payload);
 
       try {
-        // Shopify admin se app ka relative path
-        const apiUrl = `/apps/currency-switcher-app-2/app/api/merchant-settings`;
-
+        const apiUrl = "/app/api/merchant-settings";
         console.log("📡 [Step2Save] POST URL:", apiUrl);
 
         const res = await fetch(apiUrl, {
