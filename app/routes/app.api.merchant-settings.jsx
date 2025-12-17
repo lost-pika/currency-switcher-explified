@@ -46,7 +46,10 @@ export async function action({ request }) {
 
       if (!shop || !currencies || !defaultCurrency) {
         console.error("Missing fields", { shop, currencies, defaultCurrency });
-        return jsonResponse({ ok: false, error: "Missing required fields" }, 400);
+        return jsonResponse(
+          { ok: false, error: "Missing required fields" },
+          400,
+        );
       }
 
       await prisma.merchantSettings.upsert({
@@ -84,6 +87,8 @@ export async function action({ request }) {
       const url = new URL(request.url);
       const shop = url.searchParams.get("shop") || defaultShop;
 
+      console.log("📨 [API GET] shop:", shop);
+
       if (!shop) {
         return jsonResponse({ ok: false, error: "Shop not provided" }, 400);
       }
@@ -93,9 +98,11 @@ export async function action({ request }) {
       });
 
       if (saved) {
+        console.log("✅ [API GET] Found:", saved);
         return jsonResponse({ ok: true, data: saved }, 200);
       }
 
+      console.log("⚠️ [API GET] Not found, sending defaults");
       return jsonResponse(
         {
           ok: true,
