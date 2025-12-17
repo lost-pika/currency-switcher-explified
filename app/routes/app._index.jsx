@@ -750,7 +750,7 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
-handleStep2Saveconst handleStep2Save = useCallback(
+const handleStep2Save = useCallback(
   async (data) => {
     console.log("🔥 [Step2Save] START with data:", data);
 
