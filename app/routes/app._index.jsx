@@ -748,67 +748,64 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
- const handleStep2Save = useCallback(
-  async (data) => {
-    console.log("🔥 [Step2Save] START with data:", data);
+  const handleStep2Save = useCallback(
+    async (data) => {
+      console.log("🔥 [Step2Save] START with data:", data);
 
-    if (!shop) {
-      console.error("❌ [Step2Save] Shop missing");
-      alert("Shop not found!");
-      return;
-    }
-
-    const payload = {
-      shop,
-      currencies: step1Data.currencies,
-      defaultCurrency: step1Data.defaultCurrency,
-      baseCurrency: "USD",
-      placement: data.placement,
-      fixedCorner: data.fixedCorner,
-      distanceTop: data.distanceTop,
-      distanceRight: data.distanceRight,
-      distanceBottom: data.distanceBottom,
-      distanceLeft: data.distanceLeft,
-    };
-
-    console.log("📝 [Step2Save] Payload:", payload);
-
-    try {
-      // Shopify admin origin + app path
-      const apiUrl =
-        window.location.origin +
-        "/apps/currency-switcher-app-2/app/api/merchant-settings";
-
-      console.log("📡 [Step2Save] POST URL:", apiUrl);
-
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
-
-      console.log("📊 [Step2Save] Status:", res.status);
-
-      if (!res.ok) {
-        const body = await res.text();
-        console.error("❌ [Step2Save] Error body:", body);
-        alert(`API error ${res.status}`);
+      if (!shop) {
+        console.error("❌ [Step2Save] Shop missing");
+        alert("Shop not found!");
         return;
       }
 
-      const saved = await res.json();
-      console.log("✅ [Step2Save] Saved:", saved);
+      const payload = {
+        shop,
+        currencies: step1Data.currencies,
+        defaultCurrency: step1Data.defaultCurrency,
+        baseCurrency: "USD",
+        placement: data.placement,
+        fixedCorner: data.fixedCorner,
+        distanceTop: data.distanceTop,
+        distanceRight: data.distanceRight,
+        distanceBottom: data.distanceBottom,
+        distanceLeft: data.distanceLeft,
+      };
 
-      setStep(3);
-    } catch (err) {
-      console.error("❌ [Step2Save] Error:", err);
-      alert(err.message);
-    }
-  },
-  [shop, step1Data],
-);
+      console.log("📝 [Step2Save] Payload:", payload);
 
+      try {
+        // Shopify admin se app ka relative path
+        const apiUrl = `/apps/currency-switcher-app-2/app/api/merchant-settings`;
+
+        console.log("📡 [Step2Save] POST URL:", apiUrl);
+
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          credentials: "include",
+        });
+
+        console.log("📊 [Step2Save] Status:", res.status);
+
+        if (!res.ok) {
+          const body = await res.text();
+          console.error("❌ [Step2Save] Error body:", body);
+          alert(`API error ${res.status}`);
+          return;
+        }
+
+        const saved = await res.json();
+        console.log("✅ [Step2Save] Saved:", saved);
+
+        setStep(3);
+      } catch (err) {
+        console.error("❌ [Step2Save] Error:", err);
+        alert(err.message);
+      }
+    },
+    [shop, step1Data],
+  );
 
   if (loading) {
     return (
