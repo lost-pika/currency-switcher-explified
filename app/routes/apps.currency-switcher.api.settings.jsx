@@ -1,4 +1,6 @@
-import prisma from "../db.server";
+// app/routes/apps.currency-switcher.api.settings.jsx
+
+import prisma from "../db.server"; // adjust path if needed
 
 function jsonResponse(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -34,7 +36,6 @@ export async function loader({ request }) {
       return jsonResponse({ error: "shop parameter required" }, 400);
     }
 
-    // Query database
     const settings = await prisma.merchantSettings.findUnique({
       where: { shop },
     });

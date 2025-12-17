@@ -11,6 +11,9 @@
     ".product__price",
     ".cart__price",
     "span.money",
+    ".price-item--regular",
+    ".price-item--sale",
+    ".cart-item__price",
   ];
 
   const PICK = "__mlv_currency_picker_v2";
@@ -87,7 +90,6 @@
       return cached;
     }
 
-    // ✅ NEW: Use /apps/ path (publicly accessible)
     const url = `${API_BASE}/apps/currency-switcher/api/rates?base=${base}&symbols=${targets.join(",")}`;
     console.log("📊 Fetching rates from:", url);
 
@@ -123,8 +125,9 @@
 
       console.log("🏪 Shop:", shop);
 
-      // ✅ NEW: Use /apps/ path (publicly accessible)
-      const url = `${API_BASE}/apps/currency-switcher/api/settings?shop=${encodeURIComponent(shop)}`;
+      const url = `${API_BASE}/apps/currency-switcher/api/settings?shop=${encodeURIComponent(
+        shop,
+      )}`;
       console.log("🔗 Loading settings from:", url);
 
       const r = await fetch(url);
@@ -170,8 +173,12 @@
 
   function convertEl(el, rate, cur) {
     if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
+    console.log("🔍 Original text:", el.dataset.orig);
     const n = parseNum(el.dataset.orig);
-    if (n === null) return;
+    if (n === null) {
+      console.warn("⚠️ Could not parse number from:", el.dataset.orig);
+      return;
+    }
     const converted = fmt(n * rate, cur);
     console.log(`💱 ${el.dataset.orig} * ${rate} = ${converted}`);
     el.textContent = converted;
@@ -244,7 +251,6 @@
 [data-mlv-menu] div:hover {
   background: #f2f2f2;
 }`;
-
     const s = document.createElement("style");
     s.id = "__mlv_css";
     s.textContent = css;
@@ -295,7 +301,6 @@
     document.body.appendChild(w);
     document.body.appendChild(m);
 
-    // Apply placement settings
     if (st?.placement === "Fixed Position") {
       w.style.position = "fixed";
       w.style.bottom = `${st.distanceBottom || 16}px`;

@@ -5,6 +5,9 @@ name = "currency-switcher-app"
 application_url = "https://currency-switcher-explified.vercel.app"
 embedded = true
 
+[build]
+automatically_update_urls_on_dev = false
+
 [webhooks]
 api_version = "2026-01"
 
@@ -16,6 +19,3 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [ "https://currency-switcher-explified.vercel.app/api/auth" ]
-
-[build]
-automatically_update_urls_on_dev = true

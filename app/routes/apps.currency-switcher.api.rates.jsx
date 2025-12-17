@@ -27,9 +27,8 @@ export async function loader({ request }) {
   try {
     const url = new URL(request.url);
     const base = (url.searchParams.get("base") || "USD").toUpperCase();
-    const symbolsParam = (url.searchParams.get("symbols") || "").toUpperCase(); // CSV like "AUD,EUR"
+    const symbolsParam = (url.searchParams.get("symbols") || "").toUpperCase();
 
-    // frankfurter expects: /latest?base=USD&symbols=EUR,GBP
     const remote = new URL("https://api.frankfurter.app/latest");
     remote.searchParams.set("base", base);
     if (symbolsParam) {
@@ -64,7 +63,6 @@ export async function loader({ request }) {
   }
 }
 
-// POST not needed; if you want, forward to loader or block it
 export async function action({ request }) {
   if (request.method === "OPTIONS") {
     return options();
