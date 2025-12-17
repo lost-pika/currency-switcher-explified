@@ -37,7 +37,7 @@ model MerchantSettings {
   selectedCurrencies    String[] @default(["USD", "EUR"])
   defaultCurrency       String   @default("USD")
   baseCurrency          String   @default("USD")
-  placement             String   @default("Fixed Position")
+  placement String @default("fixed")
   fixedCorner           String   @default("bottom-right")
   distanceTop           Int      @default(16)
   distanceRight         Int      @default(16)

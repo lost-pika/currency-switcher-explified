@@ -757,18 +757,27 @@ export default function SettingsRoute() {
         return;
       }
 
-      const payload = {
-        shop,
-        currencies: step1Data.currencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        baseCurrency: "USD",
-        placement: data.placement,
-        fixedCorner: data.fixedCorner,
-        distanceTop: data.distanceTop,
-        distanceRight: data.distanceRight,
-        distanceBottom: data.distanceBottom,
-        distanceLeft: data.distanceLeft,
-      };
+      const normalizedPlacement =
+  data.placement === "Fixed Position"
+    ? "fixed"
+    : data.placement === "Inline with the header"
+    ? "inline"
+    : "hidden";
+
+const payload = {
+  shop,
+  currencies: step1Data.currencies,
+  defaultCurrency: step1Data.defaultCurrency,
+  baseCurrency: "USD",
+  placement: normalizedPlacement, // ✅ fixed | inline | hidden
+  fixedCorner:
+    normalizedPlacement === "fixed" ? data.fixedCorner : null,
+  distanceTop: data.distanceTop,
+  distanceRight: data.distanceRight,
+  distanceBottom: data.distanceBottom,
+  distanceLeft: data.distanceLeft,
+};
+
 
       console.log("📝 [Step2Save] Payload:", payload);
 
@@ -829,17 +838,12 @@ export default function SettingsRoute() {
 
   if (step === 2) {
     const normalizePlacementForUI = (placement) => {
-      if (
-        ["top-left", "top-right", "bottom-left", "bottom-right"].includes(
-          placement,
-        )
-      ) {
-        return "Fixed Position";
-      }
-      if (placement === "inline") return "Inline with the header";
-      if (placement === "hidden") return "Don't show at all";
-      return "Fixed Position";
-    };
+  if (placement === "fixed") return "Fixed Position";
+  if (placement === "inline") return "Inline with the header";
+  if (placement === "hidden") return "Don't show at all";
+  return "Fixed Position";
+};
+
 
     return (
       <PlacementSelector
