@@ -1,9 +1,9 @@
 export const runtime = "nodejs";
 
-import { authenticate } from "../shopify.server";
+import { unauthenticated } from "../shopify.server";
 
 export const action = async ({ request }) => {
-  const { shop, topic } = await authenticate.webhook(request);
+  const { shop, topic } = await unauthenticated.webhook(request);
 
   console.log(`Received ${topic} webhook for ${shop}`);
 
