@@ -221,9 +221,7 @@ function CurrencySelector({
                             readOnly
                             className="w-4 h-4 accent-teal-500 border-gray-300 rounded"
                           />
-                          <span className="select-none">
-                            {currency.label}
-                          </span>
+                          <span className="select-none">{currency.label}</span>
                         </label>
                       ))
                     )}
@@ -237,8 +235,7 @@ function CurrencySelector({
           <section className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
             <h2 className="text-xl font-semibold">Default Currency</h2>
             <p className="mt-1 text-sm text-gray-500">
-              This currency will be selected by default for your store
-              visitors.
+              This currency will be selected by default for your store visitors.
             </p>
 
             <div className="mt-4 max-w-sm">
@@ -750,66 +747,63 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
-const handleStep2Save = useCallback(
-  async (data) => {
-    console.log("🔥 [Step2Save] START with data:", data);
+  const handleStep2Save = useCallback(
+    async (data) => {
+      console.log("🔥 [Step2Save] START with data:", data);
 
-    if (!shop) {
-      console.error("❌ [Step2Save] Shop missing");
-      alert("Shop not found!");
-      return;
-    }
-
-    const payload = {
-      shop,
-      currencies: step1Data.currencies,
-      defaultCurrency: step1Data.defaultCurrency,
-      baseCurrency: "USD",
-      placement: data.placement,
-      fixedCorner: data.fixedCorner,
-      distanceTop: data.distanceTop,
-      distanceRight: data.distanceRight,
-      distanceBottom: data.distanceBottom,
-      distanceLeft: data.distanceLeft,
-    };
-
-    console.log("📝 [Step2Save] Payload:", payload);
-
-    try {
-      console.log("📡 [Step2Save] Sending POST to /app/api/merchant-settings");
-
-      const res = await fetch("/app/api/merchant-settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
-
-      console.log("📊 [Step2Save] Status:", res.status);
-
-      if (!res.ok) {
-        const body = await res.text();
-        console.error("❌ [Step2Save] Error body:", body);
-        alert(`API error ${res.status}`);
+      if (!shop) {
+        console.error("❌ [Step2Save] Shop missing");
+        alert("Shop not found!");
         return;
       }
 
-      const saved = await res.json();
-      console.log("✅ [Step2Save] Saved:", saved);
+      const payload = {
+        shop,
+        currencies: step1Data.currencies,
+        defaultCurrency: step1Data.defaultCurrency,
+        baseCurrency: "USD",
+        placement: data.placement,
+        fixedCorner: data.fixedCorner,
+        distanceTop: data.distanceTop,
+        distanceRight: data.distanceRight,
+        distanceBottom: data.distanceBottom,
+        distanceLeft: data.distanceLeft,
+      };
 
-      setStep(3);
-    } catch (err) {
-      console.error("❌ [Step2Save] Error:", err);
-      alert(err.message);
-    }
-  },
-  [shop, step1Data],
-);
+      console.log("📝 [Step2Save] Payload:", payload);
 
+      try {
+        console.log(
+          "📡 [Step2Save] Sending POST to /app/api/merchant-settings",
+        );
 
+        const res = await fetch("/app/api/merchant-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          credentials: "include",
+        });
 
+        console.log("📊 [Step2Save] Status:", res.status);
 
+        if (!res.ok) {
+          const body = await res.text();
+          console.error("❌ [Step2Save] Error body:", body);
+          alert(`API error ${res.status}`);
+          return;
+        }
 
+        const saved = await res.json();
+        console.log("✅ [Step2Save] Saved:", saved);
+
+        setStep(3);
+      } catch (err) {
+        console.error("❌ [Step2Save] Error:", err);
+        alert(err.message);
+      }
+    },
+    [shop, step1Data],
+  );
 
   if (loading) {
     return (

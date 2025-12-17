@@ -29,86 +29,65 @@ export async function action({ request }) {
     const defaultShop = "currency-switcher-app-2.myshopify.com";
 
     // ---------- POST: SAVE ----------
-    if (method === "POST") {
-      const body = await request.json();
+   if (method === "POST") {
+  const body = await request.json();
 
-      console.log("📨 [API POST] Raw body:", body);
+  const {
+    shop: bodyShop,
+    currencies,
+    defaultCurrency,
+    baseCurrency = "USD",
+    placement = "bottom-right",
+    fixedCorner = "bottom-right",
+    distanceTop = 16,
+    distanceRight = 16,
+    distanceBottom = 16,
+    distanceLeft = 16,
+  } = body;
 
-      const {
-        shop = defaultShop,
-        currencies = [],
-        defaultCurrency = "USD",
-        baseCurrency = "USD",
-        placement = "Fixed Position",
-        fixedCorner = "bottom-right",
-        distanceTop = 16,
-        distanceRight = 16,
-        distanceBottom = 16,
-        distanceLeft = 16,
-      } = body;
+  const shop = sessionShop || bodyShop; // IMPORTANT: fallback to body.shop
 
-      console.log("🔍 [API POST] Parsed:", {
-        shop,
-        currencies,
-        defaultCurrency,
-        placement,
-        fixedCorner,
-      });
+  if (!shop || !currencies || !defaultCurrency) {
+    console.error("Missing fields", { shop, currencies, defaultCurrency });
+    return new Response(
+      JSON.stringify({ error: "Missing required fields" }),
+      { status: 400, headers: CORS_HEADERS }
+    );
+  }
 
-      if (!shop || !Array.isArray(currencies) || currencies.length === 0) {
-        console.error("❌ [API POST] Missing shop/currencies");
-        return jsonResponse(
-          {
-            ok: false,
-            error:
-              "Missing required fields: shop and currencies (non-empty array) required",
-          },
-          400,
-        );
-      }
+  await prisma.merchantSettings.upsert({
+    where: { shop },
+    update: {
+      selectedCurrencies: currencies,
+      defaultCurrency,
+      baseCurrency,
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    },
+    create: {
+      shop,
+      selectedCurrencies: currencies,
+      defaultCurrency,
+      baseCurrency,
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    },
+  });
 
-      if (!defaultCurrency) {
-        console.error("❌ [API POST] Missing defaultCurrency");
-        return jsonResponse(
-          { ok: false, error: "Missing defaultCurrency" },
-          400,
-        );
-      }
+  return new Response(
+    JSON.stringify({ success: true }),
+    { status: 200, headers: CORS_HEADERS }
+  );
+}
 
-      const saved = await prisma.merchantSettings.upsert({
-        where: { shop },
-        update: {
-          selectedCurrencies: currencies,
-          defaultCurrency,
-          baseCurrency,
-          placement,
-          fixedCorner,
-          distanceTop,
-          distanceRight,
-          distanceBottom,
-          distanceLeft,
-        },
-        create: {
-          shop,
-          selectedCurrencies: currencies,
-          defaultCurrency,
-          baseCurrency,
-          placement,
-          fixedCorner,
-          distanceTop,
-          distanceRight,
-          distanceBottom,
-          distanceLeft,
-        },
-      });
-
-      console.log("✅ [API POST] Saved row:", saved);
-
-      return jsonResponse(
-        { ok: true, message: "Settings saved", data: saved },
-        200,
-      );
-    }
 
     // ---------- GET: LOAD ----------
     if (method === "GET") {
