@@ -1,138 +1,90 @@
-// app/routes/app.api.merchant-settings.jsx
-import prisma from "../db.server";
+// app/routes/app.api.merchant-settings.tsx
+import { json } from "@remix-run/node";
+import { prisma } from "../db.server";
 
-const CORS_HEADERS = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+// GET: load settings
+export async function loader({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const shop = url.searchParams.get("shop");
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: CORS_HEADERS,
+  if (!shop) {
+    return json({ error: "Missing shop" }, { status: 400 });
+  }
+
+  const settings = await prisma.merchantSettings.findUnique({
+    where: { shop },
   });
-}
 
-export async function action({ request }) {
-  const method = request.method;
-
-  if (method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  if (!settings) {
+    // sensible defaults
+    return json({
+      data: {
+        selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+        defaultCurrency: "INR",
+        baseCurrency: "USD",
+        placement: "Fixed Position",
+        fixedCorner: "bottom-right",
+        distanceTop: 16,
+        distanceRight: 16,
+        distanceBottom: 16,
+        distanceLeft: 16,
+      },
+    });
   }
 
-  try {
-    const defaultShop = "currency-switcher-app-2.myshopify.com";
-
-    // ---------- POST: SAVE ----------
-    if (method === "POST") {
-      const body = await request.json();
-
-      const {
-        shop: bodyShop,
-        currencies,
-        defaultCurrency,
-        baseCurrency = "USD",
-        placement = "bottom-right",
-        fixedCorner = "bottom-right",
-        distanceTop = 16,
-        distanceRight = 16,
-        distanceBottom = 16,
-        distanceLeft = 16,
-      } = body;
-
-      const shop = bodyShop || defaultShop;
-
-      if (!shop || !currencies || !defaultCurrency) {
-        console.error("Missing fields", { shop, currencies, defaultCurrency });
-        return jsonResponse(
-          { ok: false, error: "Missing required fields" },
-          400,
-        );
-      }
-
-      await prisma.merchantSettings.upsert({
-        where: { shop },
-        update: {
-          selectedCurrencies: currencies,
-          defaultCurrency,
-          baseCurrency,
-          placement,
-          fixedCorner,
-          distanceTop,
-          distanceRight,
-          distanceBottom,
-          distanceLeft,
-        },
-        create: {
-          shop,
-          selectedCurrencies: currencies,
-          defaultCurrency,
-          baseCurrency,
-          placement,
-          fixedCorner,
-          distanceTop,
-          distanceRight,
-          distanceBottom,
-          distanceLeft,
-        },
-      });
-
-      return jsonResponse({ ok: true }, 200);
-    }
-
-    // ---------- GET: LOAD ----------
-    if (method === "GET") {
-      const url = new URL(request.url);
-      const shop = url.searchParams.get("shop") || defaultShop;
-
-      console.log("📨 [API GET] shop:", shop);
-
-      if (!shop) {
-        return jsonResponse({ ok: false, error: "Shop not provided" }, 400);
-      }
-
-      const saved = await prisma.merchantSettings.findUnique({
-        where: { shop },
-      });
-
-      if (saved) {
-        console.log("✅ [API GET] Found:", saved);
-        return jsonResponse({ ok: true, data: saved }, 200);
-      }
-
-      console.log("⚠️ [API GET] Not found, sending defaults");
-      return jsonResponse(
-        {
-          ok: true,
-          data: {
-            shop,
-            selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
-            defaultCurrency: "INR",
-            baseCurrency: "USD",
-            placement: "bottom-right",
-            fixedCorner: "bottom-right",
-            distanceTop: 16,
-            distanceRight: 16,
-            distanceBottom: 16,
-            distanceLeft: 16,
-          },
-        },
-        200,
-      );
-    }
-
-    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
-  } catch (err) {
-    console.error("❌ [API ERROR]:", err);
-    return jsonResponse(
-      { ok: false, error: err?.message || "Internal error" },
-      500,
-    );
-  }
+  return json({ data: settings });
 }
 
-export async function loader(args) {
-  return action(args);
+// POST: save settings
+export async function action({ request }: { request: Request }) {
+  if (request.method !== "POST") {
+    return json({ error: "Method not allowed" }, { status: 405 });
+  }
+
+  const body = await request.json();
+  const {
+    shop,
+    currencies,
+    defaultCurrency,
+    baseCurrency,
+    placement,
+    fixedCorner,
+    distanceTop,
+    distanceRight,
+    distanceBottom,
+    distanceLeft,
+  } = body;
+
+  if (!shop) {
+    return json({ error: "Missing shop in payload" }, { status: 400 });
+  }
+
+  const saved = await prisma.merchantSettings.upsert({
+    where: { shop },
+    update: {
+      selectedCurrencies: currencies,
+      defaultCurrency,
+      baseCurrency,
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    },
+    create: {
+      shop,
+      selectedCurrencies: currencies,
+      defaultCurrency,
+      baseCurrency,
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    },
+  });
+
+  return json({ success: true, data: saved });
 }
