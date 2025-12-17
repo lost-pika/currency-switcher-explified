@@ -1,9 +1,8 @@
-// app/routes/app.api.merchant-settings.tsx
 import { json } from "@remix-run/node";
 import { prisma } from "../db.server";
 
 // GET: load settings
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }) {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
 
@@ -16,7 +15,6 @@ export async function loader({ request }: { request: Request }) {
   });
 
   if (!settings) {
-    // sensible defaults
     return json({
       data: {
         selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
@@ -36,7 +34,7 @@ export async function loader({ request }: { request: Request }) {
 }
 
 // POST: save settings
-export async function action({ request }: { request: Request }) {
+export async function action({ request }) {
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, { status: 405 });
   }
