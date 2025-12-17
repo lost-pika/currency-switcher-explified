@@ -19,6 +19,18 @@
   const PICK = "__mlv_currency_picker_v2";
   const KEY = "mlv_currency_choice_v2";
 
+  const FALLBACK_SETTINGS = {
+    selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+    defaultCurrency: "INR",
+    baseCurrency: "USD",
+    placement: "Inline with the header",
+    fixedCorner: "top-right",
+    distanceTop: 16,
+    distanceRight: 16,
+    distanceBottom: 16,
+    distanceLeft: 16,
+  };
+
   /* ================= UTILS ================= */
   const now = () => Date.now();
 
@@ -90,7 +102,9 @@
       return cached;
     }
 
-    const url = `${API_BASE}/apps/currency-switcher/api/rates?base=${base}&symbols=${targets.join(",")}`;
+    const url = `${API_BASE}/apps/currency-switcher/api/rates?base=${base}&symbols=${targets.join(
+      ",",
+    )}`;
     console.log("📊 Fetching rates from:", url);
 
     try {
@@ -132,32 +146,44 @@
 
       const r = await fetch(url);
       if (!r.ok) {
-        console.warn("⚠️ settings fetch failed", r.status, "using defaults");
-        return null;
+        console.warn(
+          "⚠️ settings fetch failed",
+          r.status,
+          "using FALLBACK_SETTINGS",
+        );
+        return { ...FALLBACK_SETTINGS };
       }
 
       const data = await r.json();
       console.log("✅ settings loaded:", data);
 
       return {
-        selectedCurrencies: data.selectedCurrencies || [
-          "USD",
-          "EUR",
-          "INR",
-          "CAD",
-        ],
-        defaultCurrency: data.defaultCurrency || "INR",
-        baseCurrency: data.baseCurrency || "USD",
-        placement: data.placement || "Fixed Position",
-        fixedCorner: data.fixedCorner || "bottom-right",
-        distanceTop: data.distanceTop ?? 16,
-        distanceRight: data.distanceRight ?? 16,
-        distanceBottom: data.distanceBottom ?? 16,
-        distanceLeft: data.distanceLeft ?? 16,
+        selectedCurrencies:
+          data.selectedCurrencies || FALLBACK_SETTINGS.selectedCurrencies,
+        defaultCurrency: data.defaultCurrency || FALLBACK_SETTINGS.defaultCurrency,
+        baseCurrency: data.baseCurrency || FALLBACK_SETTINGS.baseCurrency,
+        placement: data.placement || FALLBACK_SETTINGS.placement,
+        fixedCorner: data.fixedCorner || FALLBACK_SETTINGS.fixedCorner,
+        distanceTop:
+          data.distanceTop !== undefined
+            ? data.distanceTop
+            : FALLBACK_SETTINGS.distanceTop,
+        distanceRight:
+          data.distanceRight !== undefined
+            ? data.distanceRight
+            : FALLBACK_SETTINGS.distanceRight,
+        distanceBottom:
+          data.distanceBottom !== undefined
+            ? data.distanceBottom
+            : FALLBACK_SETTINGS.distanceBottom,
+        distanceLeft:
+          data.distanceLeft !== undefined
+            ? data.distanceLeft
+            : FALLBACK_SETTINGS.distanceLeft,
       };
     } catch (err) {
-      console.error("❌ settings load error:", err);
-      return null;
+      console.error("❌ settings load error, using FALLBACK_SETTINGS:", err);
+      return { ...FALLBACK_SETTINGS };
     }
   }
 
@@ -173,15 +199,9 @@
 
   function convertEl(el, rate, cur) {
     if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-    console.log("🔍 Original text:", el.dataset.orig);
     const n = parseNum(el.dataset.orig);
-    if (n === null) {
-      console.warn("⚠️ Could not parse number from:", el.dataset.orig);
-      return;
-    }
-    const converted = fmt(n * rate, cur);
-    console.log(`💱 ${el.dataset.orig} * ${rate} = ${converted}`);
-    el.textContent = converted;
+    if (n === null) return;
+    el.textContent = fmt(n * rate, cur);
   }
 
   function revertEl(el) {
@@ -195,11 +215,8 @@
 
     const css = `
 #${PICK} {
-  position: fixed;
   z-index: 2147483647;
   font-family: system-ui, -apple-system, sans-serif;
-  bottom: 16px;
-  right: 16px;
 }
 
 #${PICK} button {
@@ -273,19 +290,20 @@
     const m = document.createElement("div");
     m.setAttribute("data-mlv-menu", "");
 
-    (st?.selectedCurrencies || ["USD", "EUR", "INR", "CAD"]).forEach((c) => {
-      const d = document.createElement("div");
-      d.textContent = c;
-      d.style.cursor = "pointer";
-      d.onclick = (e) => {
-        e.stopPropagation();
-        m.style.display = "none";
-        b.textContent = c;
-        console.log("💱 Currency selected:", c);
-        onSel(c);
-      };
-      m.appendChild(d);
-    });
+    (st?.selectedCurrencies || FALLBACK_SETTINGS.selectedCurrencies).forEach(
+      (c) => {
+        const d = document.createElement("div");
+        d.textContent = c;
+        d.style.cursor = "pointer";
+        d.onclick = (e) => {
+          e.stopPropagation();
+          m.style.display = "none";
+          b.textContent = c;
+          onSel(c);
+        };
+        m.appendChild(d);
+      },
+    );
 
     b.onclick = (e) => {
       e.stopPropagation();
@@ -298,26 +316,51 @@
     document.addEventListener("click", () => (m.style.display = "none"));
 
     w.appendChild(b);
-    document.body.appendChild(w);
-    document.body.appendChild(m);
 
-    if (st?.placement === "Fixed Position") {
+    // Default: inline with header, top-right
+    if (st?.placement === "Inline with the header") {
+      // try header first, else fallback to body fixed top-right
+      const header =
+        document.querySelector("header") ||
+        document.querySelector(".site-header") ||
+        document.querySelector("#shopify-section-header");
+
+      if (header) {
+        header.style.position = header.style.position || "relative";
+        w.style.position = "absolute";
+        w.style.top = `${st.distanceTop ?? 16}px`;
+        w.style.right = `${st.distanceRight ?? 16}px`;
+        header.appendChild(w);
+      } else {
+        w.style.position = "fixed";
+        w.style.top = `${st.distanceTop ?? 16}px`;
+        w.style.right = `${st.distanceRight ?? 16}px`;
+        document.body.appendChild(w);
+      }
+    } else if (st?.placement === "Fixed Position") {
       w.style.position = "fixed";
-      w.style.bottom = `${st.distanceBottom || 16}px`;
-      w.style.right = `${st.distanceRight || 16}px`;
       w.style.top = "auto";
       w.style.left = "auto";
+      w.style.bottom = `${st.distanceBottom ?? 16}px`;
+      w.style.right = `${st.distanceRight ?? 16}px`;
+      document.body.appendChild(w);
+    } else {
+      // fallback: fixed top-right
+      w.style.position = "fixed";
+      w.style.top = `${st.distanceTop ?? 16}px`;
+      w.style.right = `${st.distanceRight ?? 16}px`;
+      document.body.appendChild(w);
     }
+
+    document.body.appendChild(m);
   }
 
   /* ================= MAIN ================= */
 
   async function runFor(cur, st) {
-    const base = st?.baseCurrency || "USD";
-    console.log(`🔄 Converting to ${cur} (base: ${base})`);
+    const base = st?.baseCurrency || FALLBACK_SETTINGS.baseCurrency;
 
     if (cur === base) {
-      console.log("✅ Reverting to base currency");
       findNodes().forEach(revertEl);
       return;
     }
@@ -328,7 +371,6 @@
       return;
     }
 
-    console.log(`✅ Got rate for ${cur}:`, rates[cur]);
     findNodes().forEach((e) => convertEl(e, rates[cur], cur));
   }
 
@@ -336,13 +378,8 @@
     console.log("🚀 Initializing currency widget...");
     injectCSS();
 
-    const st = (await loadSettings()) || {
-      selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
-      defaultCurrency: "INR",
-      baseCurrency: "USD",
-    };
-
-    console.log("⚙️ Settings loaded:", st);
+    const st = await loadSettings();
+    console.log("⚙️ Settings in use:", st);
 
     const detected = detect();
     const def = st.defaultCurrency || detected;
