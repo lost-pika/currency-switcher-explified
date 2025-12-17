@@ -1,5 +1,3 @@
-# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-
 client_id = "8ee8e1494446dc18e5df11fce259645e"
 name = "mlv-currency-switcher-app"
 application_url = "https://currency-switcher-explified.vercel.app"
@@ -16,18 +14,22 @@ api_version = "2026-01"
   topics = ["app/uninstalled"]
   uri = "/webhooks/app/uninstalled"
 
-
   [[webhooks.subscriptions]]
   topics = ["app/scopes_update"]
   uri = "/webhooks/app/scopes_update"
 
   [[webhooks.subscriptions]]
-  compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+  compliance_topics = [
+    "customers/data_request",
+    "customers/redact",
+    "shop/redact"
+  ]
   uri = "/webhooks/compliance"
 
 [access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products"
 
 [auth]
-redirect_urls = [ "https://currency-switcher-explified.vercel.app/api/auth" ]
+redirect_urls = [
+  "https://currency-switcher-explified.vercel.app/api/auth"
+]
