@@ -1,17 +1,31 @@
-<div id="mlv-widget-container"></div>
+<div id="mlv-widget-container--{{ block.id }}"></div>
 
 <script>
-  // Pass theme editor settings to the widget via window object
-  window.__MLV_THEME_SETTINGS__ = {
-    placement: "{{ block.settings.placement }}",
-    fixedCorner: "{{ block.settings.fixed_corner }}",
-    distanceTop: {{ block.settings.distance_top }},
-    distanceRight: {{ block.settings.distance_right }},
-    distanceBottom: {{ block.settings.distance_bottom }},
-    distanceLeft: {{ block.settings.distance_left }}
-  };
-  console.log("📝 Theme settings loaded:", window.__MLV_THEME_SETTINGS__);
+  (function() {
+    var blockId = "{{ block.id }}";
+    var settings = {
+      placement: "{{ block.settings.placement }}",
+      fixedCorner: "{{ block.settings.fixed_corner }}",
+      distanceTop: {{ block.settings.distance_top }},
+      distanceRight: {{ block.settings.distance_right }},
+      distanceBottom: {{ block.settings.distance_bottom }},
+      distanceLeft: {{ block.settings.distance_left }}
+    };
+
+    console.log("📝 Theme Block Settings:", settings);
+
+    // Store settings globally
+    window.__MLV_THEME_SETTINGS__ = settings;
+
+    // Dispatch event to tell widget to re-render
+    var event = new CustomEvent('mlv:theme:settings:update', { 
+      detail: settings 
+    });
+    window.dispatchEvent(event);
+  })();
 </script>
+
+<!-- Load currency widget script -->
 <script src="{{ 'currency-widget.js' | asset_url }}" defer></script>
 
 {% schema %}
@@ -25,7 +39,7 @@
       "label": "Placement",
       "default": "Fixed Position",
       "options": [
-        { "value": "Fixed Position", "label": "Fixed position" },
+        { "value": "Fixed Position", "label": "Fixed position (bottom right)" },
         { "value": "Inline with the header", "label": "Inline with header" },
         { "value": "Don't show at all", "label": "Don't show" }
       ]
@@ -33,7 +47,7 @@
     {
       "type": "select",
       "id": "fixed_corner",
-      "label": "Fixed corner",
+      "label": "Fixed corner (when fixed)",
       "default": "bottom-right",
       "options": [
         { "value": "top-left", "label": "Top left" },
