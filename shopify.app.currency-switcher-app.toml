@@ -26,4 +26,4 @@ use_legacy_install_flow = false
 redirect_urls = [ "https://currency-switcher-explified.vercel.app/api/auth" ]
 
 [build]
-automatically_update_urls_on_dev = false
+automatically_update_urls_on_dev = true
