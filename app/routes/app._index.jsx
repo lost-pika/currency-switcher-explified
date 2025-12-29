@@ -332,31 +332,24 @@ function PlacementSelector({
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
-  const handleSave = async () => {
+ const handleSave = async () => {
   console.log("① handleSave start");
   setIsSaving(true);
 
-  try {
-    console.log("② calling onSave");
+  // Parent handles everything (API + step change)
+  await onSave({
+    placement,
+    fixedCorner,
+    distanceTop,
+    distanceRight,
+    distanceBottom,
+    distanceLeft,
+  });
 
-    const success = await onSave({
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    });
-
-    console.log("③ onSave resolved with:", success);
-
-    // ❌ DO NOT change step here
-    // Parent will handle navigation
-  } finally {
-    console.log("④ setting isSaving false");
-    setIsSaving(false);
-  }
+  // ❌ DO NOT setIsSaving(false)
+  // Component will unmount when step changes
 };
+
 
 
   const handleDistanceChange = (setter) => (event) => {
@@ -770,7 +763,7 @@ export default function SettingsRoute() {
     if (!shop) {
       console.error("❌ Shop missing");
       alert("Shop not found");
-      return false;
+      return;
     }
 
     const normalizedPlacement =
@@ -796,40 +789,33 @@ export default function SettingsRoute() {
 
     console.log("⑥ Payload:", payload);
 
-    try {
-      const base = getApiBasePath();
-      // ✅ NO ?_data= needed anymore - it's a pure resource route
-      const apiUrl = `${base}/api/merchant-settings.post`;
+    const base = getApiBasePath();
+    const apiUrl = `${base}/api/merchant-settings.post`;
 
-      console.log("⑦ POST →", apiUrl);
+    console.log("⑦ POST →", apiUrl);
 
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      credentials: "include",
+    });
 
-      console.log("⑧ Response status:", res.status);
+    console.log("⑧ Response status:", res.status);
 
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("❌ API error:", text);
-        alert(`Save failed: ${text}`);
-        return false;
-      }
-
-      console.log("⑨ Save successful → moving to step 3");
-      setStep(3);
-      return true;
-    } catch (err) {
-      console.error("❌ Network error:", err);
-      alert(`Network error: ${err.message}`);
-      return false;
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("❌ API error:", text);
+      alert(`Save failed: ${text}`);
+      return;
     }
+
+    console.log("⑨ Save successful → moving to step 3");
+    setStep(3);
   },
   [shop, step1Data]
 );
+
 
 
 
