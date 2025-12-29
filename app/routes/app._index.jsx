@@ -692,9 +692,7 @@ export default function SettingsRoute() {
 
         console.log("🌐 Fetching from:", apiUrl);
 
-        const res = await fetch(`${apiUrl}?shop=${shop}`, {
-  credentials: "include",
-});
+        const res = await fetch(apiUrl, { credentials: "include" })
 
 
         if (!res.ok) {
@@ -774,18 +772,17 @@ export default function SettingsRoute() {
         : "hidden";
 
     const payload = {
-      shop,
-      currencies: step1Data.currencies,
-      defaultCurrency: step1Data.defaultCurrency,
-      baseCurrency: "USD",
-      placement: normalizedPlacement,
-      fixedCorner:
-        normalizedPlacement === "fixed" ? data.fixedCorner : null,
-      distanceTop: data.distanceTop,
-      distanceRight: data.distanceRight,
-      distanceBottom: data.distanceBottom,
-      distanceLeft: data.distanceLeft,
-    };
+  currencies: step1Data.currencies,
+  defaultCurrency: step1Data.defaultCurrency,
+  baseCurrency: "USD",
+  placement: normalizedPlacement,
+  fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
+  distanceTop: data.distanceTop,
+  distanceRight: data.distanceRight,
+  distanceBottom: data.distanceBottom,
+  distanceLeft: data.distanceLeft,
+};
+
 
     console.log("⑥ Payload:", payload);
 

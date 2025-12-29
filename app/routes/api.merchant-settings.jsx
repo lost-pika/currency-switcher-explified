@@ -2,83 +2,87 @@ import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
 /**
- * GET /api/merchant-settings?shop=xxx.myshopify.com
+ * GET /api/merchant-settings
  */
 export const loader = async ({ request }) => {
-  const url = new URL(request.url);
-  const shop = url.searchParams.get("shop");
+  try {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
 
-  if (!shop) {
+    const settings = await prisma.merchantSettings.findUnique({
+      where: { shop },
+    });
+
     return new Response(
-      JSON.stringify({ error: "Missing shop" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ ok: true, data: settings }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("GET merchant-settings failed:", err);
+    return new Response(
+      JSON.stringify({ ok: false, error: err.message }),
+      { status: 500 }
     );
   }
-
-  const settings = await prisma.merchantSettings.findUnique({
-    where: { shop },
-  });
-
-  return new Response(
-    JSON.stringify({ data: settings }),
-    { headers: { "Content-Type": "application/json" } }
-  );
 };
 
 /**
  * POST /api/merchant-settings
  */
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  try {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
 
-  const body = await request.json();
-  const {
-    shop,
-    currencies,
-    defaultCurrency,
-    baseCurrency,
-    placement,
-    fixedCorner,
-    distanceTop,
-    distanceRight,
-    distanceBottom,
-    distanceLeft,
-  } = body;
+    const body = await request.json();
 
-  if (!shop) {
+    const {
+      currencies,
+      defaultCurrency,
+      baseCurrency,
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    } = body;
+
+    console.log("💾 Saving settings for:", shop);
+
+    await prisma.merchantSettings.upsert({
+      where: { shop },
+      update: {
+        selectedCurrencies: currencies,
+        defaultCurrency,
+        baseCurrency,
+        placement,
+        fixedCorner,
+        distanceTop,
+        distanceRight,
+        distanceBottom,
+        distanceLeft,
+      },
+      create: {
+        shop,
+        selectedCurrencies: currencies,
+        defaultCurrency,
+        baseCurrency,
+        placement,
+        fixedCorner,
+        distanceTop,
+        distanceRight,
+        distanceBottom,
+        distanceLeft,
+      },
+    });
+
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  } catch (err) {
+    console.error("POST merchant-settings failed:", err);
     return new Response(
-      JSON.stringify({ error: "Missing shop" }),
-      { status: 400 }
+      JSON.stringify({ ok: false, error: err.message }),
+      { status: 500 }
     );
   }
-
-  await prisma.merchantSettings.upsert({
-    where: { shop },
-    update: {
-      selectedCurrencies: currencies,
-      defaultCurrency,
-      baseCurrency,
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    },
-    create: {
-      shop,
-      selectedCurrencies: currencies,
-      defaultCurrency,
-      baseCurrency,
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    },
-  });
-
-  // IMPORTANT: empty 204 response
-  return new Response(null, { status: 204 });
 };
