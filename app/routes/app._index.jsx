@@ -800,34 +800,33 @@ export default function SettingsRoute() {
       });
 
       console.log("⑧ Response status:", res.status);
-      console.log("⑧ Response headers:", Object.fromEntries(res.headers));
 
-      // ✅ 204 has no body, don't try to parse JSON
+      // ✅ 204 has no body
       if (res.status === 204) {
-        console.log("⑨ Save successful (204 No Content) → moving to step 3");
+        console.log("⑨ Save successful (204)");
         setStep(3);
         return;
       }
 
-      // For other success codes
+      // Other success codes
       if (res.ok) {
-        const text = await res.text();
-        console.log("⑨ Save successful → moving to step 3, response:", text);
+        console.log("⑨ Save successful (", res.status, ")");
         setStep(3);
         return;
       }
 
-      // Error handling
+      // Error
       const text = await res.text();
-      console.error("❌ API error:", res.status, text);
-      alert(`Save failed: ${res.status} - ${text}`);
+      console.error("❌ Error:", res.status, text);
+      alert(`Failed: ${res.status}`);
     } catch (err) {
-      console.error("❌ Fetch error:", err);
-      alert(`Network error: ${err.message}`);
+      console.error("❌ Fetch failed:", err);
+      alert(`Error: ${err.message}`);
     }
   },
   [shop, step1Data]
 );
+
 
   if (loading) {
     return (
