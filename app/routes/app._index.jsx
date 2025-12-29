@@ -1,32 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
 
-import { authenticate } from "../shopify.server";
-import prisma from "../db.server";
-import { useLoaderData } from "react-router";
-
-
-export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-
-  const settings = await prisma.merchantSettings.findUnique({
-    where: { shop: session.shop },
-  });
-
-  return Response.json({
-    settings: settings ?? {
-      selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
-      defaultCurrency: "INR",
-      placement: "fixed",
-      fixedCorner: "bottom-left",
-      distanceTop: 16,
-      distanceRight: 16,
-      distanceBottom: 16,
-      distanceLeft: 16,
-    },
-  });
-};
-
-
 /* -------------------------------------------------
    CONSTANTS
 ------------------------------------------------- */
@@ -677,8 +650,6 @@ function ConfirmationScreen({ onReview }) {
 ------------------------------------------------- */
 export default function SettingsRoute() {
   const [step, setStep] = useState(1);
-  const { settings } = useLoaderData();
-
   const [step1Data, setStep1Data] = useState({
     currencies: [],
     defaultCurrency: "",
@@ -686,6 +657,43 @@ export default function SettingsRoute() {
   const [loading, setLoading] = useState(true);
 
   // load settings
+ useEffect(() => {
+  (async () => {
+    try {
+      const res = await fetch("/api/merchant-settings", {
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("No settings");
+
+      const data = await res.json();
+
+      setStep1Data({
+        currencies: data.selectedCurrencies ?? DEFAULT_SELECTED,
+        defaultCurrency: data.defaultCurrency ?? "INR",
+        placement: data.placement ?? "fixed",
+        fixedCorner: data.fixedCorner ?? "bottom-right",
+        distanceTop: data.distanceTop ?? 16,
+        distanceRight: data.distanceRight ?? 16,
+        distanceBottom: data.distanceBottom ?? 16,
+        distanceLeft: data.distanceLeft ?? 16,
+      });
+    } catch {
+      setStep1Data({
+        currencies: DEFAULT_SELECTED,
+        defaultCurrency: "INR",
+        placement: "fixed",
+        fixedCorner: "bottom-right",
+        distanceTop: 16,
+        distanceRight: 16,
+        distanceBottom: 16,
+        distanceLeft: 16,
+      });
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, []);
 
 
   const handleStep1Save = useCallback((data) => {
@@ -694,49 +702,54 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
-  const handleStep2Save = useCallback(async (data) => {
-    console.log("⑤ [Step2Save] START with:", data);
+  const handleStep2Save = useCallback(
+    async (data) => {
+      console.log("⑤ [Step2Save] START with:", data);
 
-    const normalizedPlacement =
-      data.placement === "Fixed Position"
-        ? "fixed"
-        : data.placement === "Inline with the header"
-          ? "inline"
-          : "hidden";
+      
 
-    const payload = {
-      currencies: step1Data.currencies,
-      defaultCurrency: step1Data.defaultCurrency,
-      baseCurrency: "USD",
-      placement: normalizedPlacement,
-      fixedCorner: data.fixedCorner,
-      distanceTop: data.distanceTop,
-      distanceRight: data.distanceRight,
-      distanceBottom: data.distanceBottom,
-      distanceLeft: data.distanceLeft,
-    };
+      const normalizedPlacement =
+        data.placement === "Fixed Position"
+          ? "fixed"
+          : data.placement === "Inline with the header"
+            ? "inline"
+            : "hidden";
 
-    console.log("⑥ Payload:", payload);
+      const payload = {
+        currencies: step1Data.currencies,
+        defaultCurrency: step1Data.defaultCurrency,
+        baseCurrency: "USD",
+        placement: normalizedPlacement,
+        fixedCorner: data.fixedCorner,
+        distanceTop: data.distanceTop,
+        distanceRight: data.distanceRight,
+        distanceBottom: data.distanceBottom,
+        distanceLeft: data.distanceLeft,
+      };
 
-    const res = await fetch("/api/merchant-settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
+      console.log("⑥ Payload:", payload);
 
-    console.log("⑧ Response status:", res.status);
+      const res = await fetch("/api/merchant-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("❌ API error:", text);
-      alert(`Save failed: ${text}`);
-      return;
-    }
+      console.log("⑧ Response status:", res.status);
 
-    console.log("⑨ Save successful → moving to step 3");
-    setStep(3);
-  }, [step1Data]);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("❌ API error:", text);
+        alert(`Save failed: ${text}`);
+        return;
+      }
+
+      console.log("⑨ Save successful → moving to step 3");
+      setStep(3);
+    },
+[]
+  );
 
   if (loading) {
     return (
@@ -745,9 +758,8 @@ export default function SettingsRoute() {
           Loading settings…
         </div>
         <p className="text-sm text-gray-500 mt-2">
-  Loading merchant settings…
-</p>
-
+          {shop ? `Loading for shop: ${shop}` : "Waiting for shop parameter..."}
+        </p>
       </div>
     );
   }
