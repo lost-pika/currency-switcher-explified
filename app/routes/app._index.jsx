@@ -697,7 +697,10 @@ export default function SettingsRoute() {
 
         console.log("🌐 Fetching from:", apiUrl);
 
-        const res = await fetch(apiUrl, { credentials: "include" });
+        const res = await fetch(`${apiUrl}?shop=${shop}`, {
+  credentials: "include",
+});
+
 
         if (!res.ok) {
           console.warn(
@@ -796,12 +799,13 @@ export default function SettingsRoute() {
 
         console.log("📡 [Step2Save] POST URL:", apiUrl);
 
-        const res = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          credentials: "include",
-        });
+        const res = await fetch(`${apiUrl}?shop=${shop}`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
+  body: JSON.stringify(payload),
+});
+
 
         console.log("📊 [Step2Save] Status:", res.status);
 
