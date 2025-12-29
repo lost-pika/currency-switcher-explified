@@ -1,7 +1,6 @@
 import { prisma } from "../db.server";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 
-// GET - Fetch settings
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
@@ -37,7 +36,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
-// POST - Save settings
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
     return new Response(
@@ -108,7 +106,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
     return new Response(null, {
       status: 204,
-      headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("❌ Action error:", error);
@@ -121,3 +118,5 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 }
+
+// ✅ NO DEFAULT EXPORT - this must be completely empty
