@@ -695,7 +695,7 @@ export default function SettingsRoute() {
         console.log("📝 Loading settings for shop:", shop);
 
         const base = getApiBasePath();
-        const apiUrl = `${base}/api/merchant-settings`;
+        const apiUrl = `${base}/api/merchant-settings.get`;
 
         console.log("🌐 Fetching from:", apiUrl);
 
@@ -799,7 +799,7 @@ export default function SettingsRoute() {
     try {
       const base = getApiBasePath();
       // ✅ NO ?_data= needed anymore - it's a pure resource route
-      const apiUrl = `${base}/api/merchant-settings`;
+      const apiUrl = `${base}/api/merchant-settings.post`;
 
       console.log("⑦ POST →", apiUrl);
 

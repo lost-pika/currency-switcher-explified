@@ -17,9 +17,10 @@ export async function loader({ request }) {
 
   return new Response(
     JSON.stringify({ data: settings }),
-    {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    }
+    { status: 200, headers: { "Content-Type": "application/json" } }
   );
+}
+
+export default function ApiGetRoute() {
+  return null;
 }

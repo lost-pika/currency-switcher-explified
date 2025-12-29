@@ -1,13 +1,6 @@
 import { prisma } from "../db.server";
 
 export async function action({ request }) {
-  if (request.method !== "POST") {
-    return new Response(
-      JSON.stringify({ error: "Method not allowed" }),
-      { status: 405, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
   const body = await request.json();
 
   const {
@@ -26,7 +19,7 @@ export async function action({ request }) {
   if (!shop) {
     return new Response(
       JSON.stringify({ error: "Missing shop" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400 }
     );
   }
 
@@ -57,5 +50,10 @@ export async function action({ request }) {
     },
   });
 
+  // 🔑 THIS LINE UNBLOCKS THE UI
   return new Response(null, { status: 204 });
+}
+
+export default function ApiPostRoute() {
+  return null;
 }
