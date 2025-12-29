@@ -798,7 +798,8 @@ export default function SettingsRoute() {
 
     try {
       const base = getApiBasePath();
-      const apiUrl = `${base}/api/merchant-settings`;
+      // ✅ ADD THIS: Tell Remix to call the action, not render a page
+      const apiUrl = `${base}/api/merchant-settings?_data=routes/api.merchant-settings`;
 
       console.log("⑦ POST →", apiUrl);
 
@@ -818,8 +819,7 @@ export default function SettingsRoute() {
       }
 
       console.log("⑨ Save successful → moving to step 3");
-
-      setStep(3); // ✅ ONLY place step changes
+      setStep(3);
       return true;
     } catch (err) {
       console.error("❌ Network error:", err);
@@ -827,8 +827,9 @@ export default function SettingsRoute() {
       return false;
     }
   },
-  [shop, step1Data],
+  [shop, step1Data]
 );
+
 
 
   if (loading) {

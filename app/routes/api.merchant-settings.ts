@@ -1,6 +1,5 @@
 import { prisma } from "../db.server";
 
-/* GET */
 export async function loader({ request }) {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
@@ -25,7 +24,6 @@ export async function loader({ request }) {
   );
 }
 
-/* POST */
 export async function action({ request }) {
   const body = await request.json();
 
@@ -79,4 +77,4 @@ export async function action({ request }) {
   return new Response(null, { status: 204 });
 }
 
-// ✅ NO default export = resource route (no HTML, pure API)
+// NO default export
