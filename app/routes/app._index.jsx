@@ -754,76 +754,74 @@ export default function SettingsRoute() {
   }, []);
 
   const handleStep2Save = useCallback(
-    async (data) => {
-      console.log("⑤ [Step2Save] START with:", data);
+  async (data) => {
+    console.log("⑤ [Step2Save] START with:", data);
 
-      if (!shop) {
-        console.error("❌ Shop missing");
-        alert("Shop not found");
+    if (!shop) {
+      console.error("❌ Shop missing");
+      alert("Shop not found");
+      return;
+    }
+
+    const normalizedPlacement =
+      data.placement === "Fixed Position"
+        ? "fixed"
+        : data.placement === "Inline with the header"
+          ? "inline"
+          : "hidden";
+
+    const payload = {
+      shop,
+      currencies: step1Data.currencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      baseCurrency: "USD",
+      placement: normalizedPlacement,
+      fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
+      distanceTop: data.distanceTop,
+      distanceRight: data.distanceRight,
+      distanceBottom: data.distanceBottom,
+      distanceLeft: data.distanceLeft,
+    };
+
+    console.log("⑥ Payload:", payload);
+
+    // ✅ HARDCODED - same as your working GET request
+    const apiUrl = `https://currency-switcher-explified.vercel.app/api/merchant-settings`;
+    console.log("⑦ POST →", apiUrl);
+
+    try {
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
+
+      console.log("⑧ Response status:", res.status);
+
+      if (res.status === 204) {
+        console.log("⑨ Save successful (204)");
+        setStep(3);
         return;
       }
 
-      const normalizedPlacement =
-        data.placement === "Fixed Position"
-          ? "fixed"
-          : data.placement === "Inline with the header"
-            ? "inline"
-            : "hidden";
-
-      const payload = {
-        shop,
-        currencies: step1Data.currencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        baseCurrency: "USD",
-        placement: normalizedPlacement,
-        fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
-        distanceTop: data.distanceTop,
-        distanceRight: data.distanceRight,
-        distanceBottom: data.distanceBottom,
-        distanceLeft: data.distanceLeft,
-      };
-
-      console.log("⑥ Payload:", payload);
-
-      const base = getApiBasePath();
-      const apiUrl = `${base}/api/merchant-settings`;
-
-      console.log("⑦ POST →", apiUrl);
-
-      try {
-        const res = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          credentials: "include",
-        });
-
-        console.log("akjdk");
-
-        console.log("⑧ Response status:", res.status);
-
-        if (res.status === 204) {
-          console.log("⑨ Save successful (204)");
-          setStep(3);
-          return;
-        }
-
-        if (res.ok) {
-          console.log("⑨ Save successful (", res.status, ")");
-          setStep(3);
-          return;
-        }
-
-        const text = await res.text();
-        console.error("❌ Error:", res.status, text);
-        alert(`Failed: ${res.status}`);
-      } catch (err) {
-        console.error("❌ Fetch failed:", err);
-        alert(`Error: ${err.message}`);
+      if (res.ok) {
+        console.log("⑨ Save successful (", res.status, ")");
+        setStep(3);
+        return;
       }
-    },
-    [shop, step1Data],
-  );
+
+      const text = await res.text();
+      console.error("❌ Error:", res.status, text);
+      alert(`Failed: ${res.status}`);
+    } catch (err) {
+      console.error("❌ Fetch failed:", err);
+      alert(`Error: ${err.message}`);
+    }
+  },
+  [shop, step1Data]
+);
+
 
   if (loading) {
     return (
