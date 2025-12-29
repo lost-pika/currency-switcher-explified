@@ -8,10 +8,7 @@ export async function loader({ request }) {
   if (!shop) {
     return new Response(
       JSON.stringify({ error: "Missing shop" }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 400 }
     );
   }
 
@@ -20,21 +17,9 @@ export async function loader({ request }) {
   });
 
   return new Response(
-    JSON.stringify({
-      data:
-        settings ?? {
-          selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
-          defaultCurrency: "INR",
-          baseCurrency: "USD",
-          placement: "fixed",
-          fixedCorner: "bottom-right",
-          distanceTop: 16,
-          distanceRight: 16,
-          distanceBottom: 16,
-          distanceLeft: 16,
-        },
-    }),
+    JSON.stringify({ data: settings }),
     {
+      status: 200,
       headers: { "Content-Type": "application/json" },
     }
   );
@@ -42,6 +27,10 @@ export async function loader({ request }) {
 
 /* ---------------- POST ---------------- */
 export async function action({ request }) {
+  // 🚨 NO authenticate.admin here
+  // 🚨 NO redirects
+  // 🚨 NO HTML
+
   const body = await request.json();
 
   const {
@@ -60,14 +49,11 @@ export async function action({ request }) {
   if (!shop) {
     return new Response(
       JSON.stringify({ error: "Missing shop" }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 400 }
     );
   }
 
-  const saved = await prisma.merchantSettings.upsert({
+  await prisma.merchantSettings.upsert({
     where: { shop },
     update: {
       selectedCurrencies: currencies,
@@ -94,12 +80,8 @@ export async function action({ request }) {
     },
   });
 
-  return new Response(
-    JSON.stringify({ success: true, data: saved }),
-    {
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+  // ✅ CRITICAL: return FAST, EMPTY response
+  return new Response(null, { status: 204 });
 }
 
 export default function ApiRoute() {
