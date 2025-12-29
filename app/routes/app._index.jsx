@@ -685,7 +685,7 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const base = getApiBasePath();
+        const base = "https://currency-switcher-explified.vercel.app";
         const apiUrl = `${base}/api/merchant-settings`;
 
         console.log("🌐 Fetching from:", apiUrl);
@@ -786,7 +786,7 @@ export default function SettingsRoute() {
 
     console.log("⑥ Payload:", payload);
 
-    const base = getApiBasePath();
+    const base = "https://currency-switcher-explified.vercel.app";
     const apiUrl = `${base}/api/merchant-settings`;
 
     console.log("⑦ POST →", apiUrl);
