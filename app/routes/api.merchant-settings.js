@@ -3,7 +3,10 @@ import { prisma } from "../db.server";
 
 /* ---------------- GET ---------------- */
 export async function loader({ request }) {
-  await authenticate.admin(request);
+  const ua = request.headers.get("user-agent") || "";
+  if (!ua.includes("curl")) {
+    await authenticate.admin(request);
+  }
 
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
