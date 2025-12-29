@@ -5,84 +5,56 @@ import prisma from "../db.server";
  * GET /api/merchant-settings
  */
 export const loader = async ({ request }) => {
-  try {
-    const { session } = await authenticate.admin(request);
-    const shop = session.shop;
+  const { session } = await authenticate.admin(request);
 
-    const settings = await prisma.merchantSettings.findUnique({
-      where: { shop },
-    });
+  const settings = await prisma.merchantSettings.findUnique({
+    where: { shop: session.shop },
+  });
 
-    return new Response(
-      JSON.stringify({ ok: true, data: settings }),
-      { headers: { "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    console.error("GET merchant-settings failed:", err);
-    return new Response(
-      JSON.stringify({ ok: false, error: err.message }),
-      { status: 500 }
-    );
-  }
+  console.log("📥 Loaded settings for:", session.shop);
+
+  return new Response(
+    JSON.stringify({ data: settings }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 };
 
 /**
  * POST /api/merchant-settings
  */
 export const action = async ({ request }) => {
-  try {
-    const { session } = await authenticate.admin(request);
-    const shop = session.shop;
+  const { session } = await authenticate.admin(request);
+  const body = await request.json();
 
-    const body = await request.json();
+  console.log("💾 Saving for shop:", session.shop);
+  console.log("📦 Payload:", body);
 
-    const {
-      currencies,
-      defaultCurrency,
-      baseCurrency,
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    } = body;
+  await prisma.merchantSettings.upsert({
+    where: { shop: session.shop },
+    update: {
+      selectedCurrencies: body.currencies,
+      defaultCurrency: body.defaultCurrency,
+      baseCurrency: body.baseCurrency,
+      placement: body.placement,
+      fixedCorner: body.fixedCorner,
+      distanceTop: body.distanceTop,
+      distanceRight: body.distanceRight,
+      distanceBottom: body.distanceBottom,
+      distanceLeft: body.distanceLeft,
+    },
+    create: {
+      shop: session.shop,
+      selectedCurrencies: body.currencies,
+      defaultCurrency: body.defaultCurrency,
+      baseCurrency: body.baseCurrency,
+      placement: body.placement,
+      fixedCorner: body.fixedCorner,
+      distanceTop: body.distanceTop,
+      distanceRight: body.distanceRight,
+      distanceBottom: body.distanceBottom,
+      distanceLeft: body.distanceLeft,
+    },
+  });
 
-    console.log("💾 Saving settings for:", shop);
-
-    await prisma.merchantSettings.upsert({
-      where: { shop },
-      update: {
-        selectedCurrencies: currencies,
-        defaultCurrency,
-        baseCurrency,
-        placement,
-        fixedCorner,
-        distanceTop,
-        distanceRight,
-        distanceBottom,
-        distanceLeft,
-      },
-      create: {
-        shop,
-        selectedCurrencies: currencies,
-        defaultCurrency,
-        baseCurrency,
-        placement,
-        fixedCorner,
-        distanceTop,
-        distanceRight,
-        distanceBottom,
-        distanceLeft,
-      },
-    });
-
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
-  } catch (err) {
-    console.error("POST merchant-settings failed:", err);
-    return new Response(
-      JSON.stringify({ ok: false, error: err.message }),
-      { status: 500 }
-    );
-  }
+  return new Response(JSON.stringify({ ok: true }), { status: 200 });
 };
