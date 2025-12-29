@@ -1,7 +1,10 @@
+import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 
-// GET: load settings for a shop
+/* ---------------- GET ---------------- */
 export async function loader({ request }) {
+  await authenticate.admin(request);
+
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
 
@@ -12,7 +15,9 @@ export async function loader({ request }) {
     });
   }
 
-  const settings = await prisma.merchantSettings.findUnique({ where: { shop } });
+  const settings = await prisma.merchantSettings.findUnique({
+    where: { shop },
+  });
 
   return new Response(
     JSON.stringify({
@@ -21,7 +26,7 @@ export async function loader({ request }) {
           selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
           defaultCurrency: "INR",
           baseCurrency: "USD",
-          placement: "fixed",           // internal values
+          placement: "fixed",
           fixedCorner: "bottom-right",
           distanceTop: 16,
           distanceRight: 16,
@@ -33,14 +38,9 @@ export async function loader({ request }) {
   );
 }
 
-// POST: save settings
+/* ---------------- POST ---------------- */
 export async function action({ request }) {
-  if (request.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  await authenticate.admin(request);
 
   const body = await request.json();
   const {
@@ -95,7 +95,6 @@ export async function action({ request }) {
   });
 }
 
-// dummy component so route is valid
 export default function ApiRoute() {
   return null;
 }
