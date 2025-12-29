@@ -688,7 +688,7 @@ export default function SettingsRoute() {
         console.log("📝 Loading settings for shop:", shop);
 
         const base = getApiBasePath();
-        const apiUrl = `${base}/api/merchant-settings.get`;
+        const apiUrl = `${base}/api/merchant-settings`;
 
         console.log("🌐 Fetching from:", apiUrl);
 
@@ -790,7 +790,7 @@ export default function SettingsRoute() {
     console.log("⑥ Payload:", payload);
 
     const base = getApiBasePath();
-    const apiUrl = `${base}/api/merchant-settings.post`;
+    const apiUrl = `${base}/api/merchant-settings`;
 
     console.log("⑦ POST →", apiUrl);
 

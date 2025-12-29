@@ -1,8 +1,37 @@
-import { prisma } from "../db.server";
+import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
 
-export async function action({ request }) {
+/**
+ * GET /api/merchant-settings?shop=xxx.myshopify.com
+ */
+export const loader = async ({ request }) => {
+  const url = new URL(request.url);
+  const shop = url.searchParams.get("shop");
+
+  if (!shop) {
+    return new Response(
+      JSON.stringify({ error: "Missing shop" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const settings = await prisma.merchantSettings.findUnique({
+    where: { shop },
+  });
+
+  return new Response(
+    JSON.stringify({ data: settings }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+};
+
+/**
+ * POST /api/merchant-settings
+ */
+export const action = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+
   const body = await request.json();
-
   const {
     shop,
     currencies,
@@ -50,10 +79,6 @@ export async function action({ request }) {
     },
   });
 
-  // 🔑 THIS LINE UNBLOCKS THE UI
+  // IMPORTANT: empty 204 response
   return new Response(null, { status: 204 });
-}
-
-export default function ApiPostRoute() {
-  return null;
-}
+};
