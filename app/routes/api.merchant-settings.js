@@ -1,22 +1,17 @@
 import { prisma } from "../db.server";
-import { authenticate } from "../shopify.server";
-
-const DISABLE_AUTH_FOR_DB_TEST =
-  process.env.DISABLE_AUTH_FOR_DB_TEST === "true";
 
 /* ---------------- GET ---------------- */
 export async function loader({ request }) {
-  if (!DISABLE_AUTH_FOR_DB_TEST) {
-    await authenticate.admin(request);
-  }
-
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
 
   if (!shop) {
     return new Response(
       JSON.stringify({ error: "Missing shop" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
 
@@ -25,17 +20,28 @@ export async function loader({ request }) {
   });
 
   return new Response(
-    JSON.stringify({ success: true, data: settings }),
-    { headers: { "Content-Type": "application/json" } }
+    JSON.stringify({
+      data:
+        settings ?? {
+          selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+          defaultCurrency: "INR",
+          baseCurrency: "USD",
+          placement: "fixed",
+          fixedCorner: "bottom-right",
+          distanceTop: 16,
+          distanceRight: 16,
+          distanceBottom: 16,
+          distanceLeft: 16,
+        },
+    }),
+    {
+      headers: { "Content-Type": "application/json" },
+    }
   );
 }
 
 /* ---------------- POST ---------------- */
 export async function action({ request }) {
-  if (!DISABLE_AUTH_FOR_DB_TEST) {
-    await authenticate.admin(request);
-  }
-
   const body = await request.json();
 
   const {
@@ -54,7 +60,10 @@ export async function action({ request }) {
   if (!shop) {
     return new Response(
       JSON.stringify({ error: "Missing shop" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
 
@@ -87,7 +96,9 @@ export async function action({ request }) {
 
   return new Response(
     JSON.stringify({ success: true, data: saved }),
-    { headers: { "Content-Type": "application/json" } }
+    {
+      headers: { "Content-Type": "application/json" },
+    }
   );
 }
 
