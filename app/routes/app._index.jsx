@@ -753,7 +753,7 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
- const handleStep2Save = useCallback(
+  const handleStep2Save = useCallback(
   async (data) => {
     console.log("⑤ [Step2Save] START with:", data);
 
@@ -786,13 +786,13 @@ export default function SettingsRoute() {
 
     console.log("⑥ Payload:", payload);
 
-    const base = "https://currency-switcher-explified.vercel.app";
+    const base = getApiBasePath();
     const apiUrl = `${base}/api/merchant-settings`;
 
     console.log("⑦ POST →", apiUrl);
 
     try {
-      const res = await fetch("/api/merchant-settings", {
+      const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -801,21 +801,18 @@ export default function SettingsRoute() {
 
       console.log("⑧ Response status:", res.status);
 
-      // ✅ 204 has no body
       if (res.status === 204) {
         console.log("⑨ Save successful (204)");
         setStep(3);
         return;
       }
 
-      // Other success codes
       if (res.ok) {
         console.log("⑨ Save successful (", res.status, ")");
         setStep(3);
         return;
       }
 
-      // Error
       const text = await res.text();
       console.error("❌ Error:", res.status, text);
       alert(`Failed: ${res.status}`);
