@@ -333,7 +333,13 @@ function PlacementSelector({
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
   const handleSave = async () => {
-    console.log("💾 [PlacementSelector] handleSave called with:", {
+  console.log("① handleSave start");
+  setIsSaving(true);
+
+  try {
+    console.log("② calling onSave");
+
+    const success = await onSave({
       placement,
       fixedCorner,
       distanceTop,
@@ -342,20 +348,16 @@ function PlacementSelector({
       distanceLeft,
     });
 
-    setIsSaving(true);
-    try {
-      await onSave({
-        placement,
-        fixedCorner,
-        distanceTop,
-        distanceRight,
-        distanceBottom,
-        distanceLeft,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    console.log("③ onSave resolved with:", success);
+
+    // ❌ DO NOT change step here
+    // Parent will handle navigation
+  } finally {
+    console.log("④ setting isSaving false");
+    setIsSaving(false);
+  }
+};
+
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
@@ -762,71 +764,72 @@ export default function SettingsRoute() {
   }, []);
 
   const handleStep2Save = useCallback(
-    async (data) => {
-      console.log("🔥 [Step2Save] START with data:", data);
+  async (data) => {
+    console.log("⑤ [Step2Save] START with:", data);
 
-      if (!shop) {
-        console.error("❌ [Step2Save] Shop missing");
-        alert("Shop not found!");
-        return;
+    if (!shop) {
+      console.error("❌ Shop missing");
+      alert("Shop not found");
+      return false;
+    }
+
+    const normalizedPlacement =
+      data.placement === "Fixed Position"
+        ? "fixed"
+        : data.placement === "Inline with the header"
+        ? "inline"
+        : "hidden";
+
+    const payload = {
+      shop,
+      currencies: step1Data.currencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      baseCurrency: "USD",
+      placement: normalizedPlacement,
+      fixedCorner:
+        normalizedPlacement === "fixed" ? data.fixedCorner : null,
+      distanceTop: data.distanceTop,
+      distanceRight: data.distanceRight,
+      distanceBottom: data.distanceBottom,
+      distanceLeft: data.distanceLeft,
+    };
+
+    console.log("⑥ Payload:", payload);
+
+    try {
+      const base = getApiBasePath();
+      const apiUrl = `${base}/api/merchant-settings`;
+
+      console.log("⑦ POST →", apiUrl);
+
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
+
+      console.log("⑧ Response status:", res.status);
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("❌ API error:", text);
+        return false;
       }
 
-      const normalizedPlacement =
-        data.placement === "Fixed Position"
-          ? "fixed"
-          : data.placement === "Inline with the header"
-            ? "inline"
-            : "hidden";
+      console.log("⑨ Save successful → moving to step 3");
 
-      const payload = {
-        shop,
-        currencies: step1Data.currencies,
-        defaultCurrency: step1Data.defaultCurrency,
-        baseCurrency: "USD",
-        placement: normalizedPlacement,
-        fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
-        distanceTop: data.distanceTop,
-        distanceRight: data.distanceRight,
-        distanceBottom: data.distanceBottom,
-        distanceLeft: data.distanceLeft,
-      };
+      setStep(3); // ✅ ONLY place step changes
+      return true;
+    } catch (err) {
+      console.error("❌ Network error:", err);
+      alert(err.message);
+      return false;
+    }
+  },
+  [shop, step1Data],
+);
 
-      console.log("📝 [Step2Save] Payload:", payload);
-
-      try {
-        const base = getApiBasePath();
-        const apiUrl = `${base}/api/merchant-settings`;
-
-        console.log("📡 [Step2Save] POST URL:", apiUrl);
-
-       const res = await fetch(apiUrl, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-  credentials: "include",
-});
-
-console.log("📊 Status:", res.status);
-
-if (!res.ok) {
-  const body = await res.text();
-  console.error("❌ API error:", body);
-  alert(`API error ${res.status}`);
-  return;
-}
-
-// ✅ DO NOT parse JSON
-console.log("✅ Saved successfully");
-setStep(3);
-
-
-      } catch (err) {
-        console.error("❌ [Step2Save] Error:", err);
-        alert(err.message);
-      }
-    },
-    [shop, step1Data],
-  );
 
   if (loading) {
     return (
@@ -886,3 +889,8 @@ setStep(3);
 
   return null;
 }
+
+
+
+
+
