@@ -691,7 +691,7 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl = `/app/api/merchant-settings?shop=${encodeURIComponent(
+        const apiUrl = `/api/merchant-settings?shop=${encodeURIComponent(
           shop,
         )}`;
         console.log("🌐 Fetching from:", apiUrl);
@@ -791,7 +791,7 @@ export default function SettingsRoute() {
       console.log("📝 [Step2Save] Payload:", payload);
 
       try {
-        const apiUrl = "/app/api/merchant-settings";
+        const apiUrl = "/api/merchant-settings";
         console.log("📡 [Step2Save] POST URL:", apiUrl);
 
         const res = await fetch(apiUrl, {
