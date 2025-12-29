@@ -50,11 +50,11 @@ export async function loader({ request }) {
 /* =====================================================
    POST: Save merchant settings
    ===================================================== */
-export async function action({ request }) {
-  const ua = request.headers.get("user-agent") || "";
+const DISABLE_AUTH_FOR_DB_TEST =
+  process.env.DISABLE_AUTH_FOR_DB_TEST === "true";
 
-  // 🔓 TEMP: allow curl / Postman
-  if (!ua.includes("curl")) {
+export async function action({ request }) {
+  if (!DISABLE_AUTH_FOR_DB_TEST) {
     await authenticate.admin(request);
   }
 
@@ -112,6 +112,7 @@ export async function action({ request }) {
     { headers: { "Content-Type": "application/json" } }
   );
 }
+
 
 
 /**
