@@ -104,7 +104,7 @@
       return cached;
     }
 
-    const url = `${API_HOST}/app/api/rates?base=${encodeURIComponent(
+    const url = `${API_HOST}/api/rates?base=${encodeURIComponent(
       base,
     )}&symbols=${encodeURIComponent(targets.join(","))}`;
 
@@ -142,7 +142,7 @@
 
       console.log("🏪 Shop:", shop);
 
-      const url = `${API_HOST}/app/api/merchant-settings?shop=${encodeURIComponent(
+      const url = `${API_HOST}/api/merchant-settings?shop=${encodeURIComponent(
         shop,
       )}`;
       console.log("🔗 Loading settings from:", url);

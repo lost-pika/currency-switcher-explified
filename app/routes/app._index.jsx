@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { getApiBasePath } from "../src/utils/getApiBasePath";
 
 /* -------------------------------------------------
    CONSTANTS
@@ -691,9 +692,9 @@ export default function SettingsRoute() {
       try {
         console.log("📝 Loading settings for shop:", shop);
 
-        const apiUrl = `/api/merchant-settings?shop=${encodeURIComponent(
-          shop,
-        )}`;
+        const base = getApiBasePath();
+        const apiUrl = `${base}/api/merchant-settings`;
+
         console.log("🌐 Fetching from:", apiUrl);
 
         const res = await fetch(apiUrl, { credentials: "include" });
@@ -771,8 +772,8 @@ export default function SettingsRoute() {
         data.placement === "Fixed Position"
           ? "fixed"
           : data.placement === "Inline with the header"
-          ? "inline"
-          : "hidden";
+            ? "inline"
+            : "hidden";
 
       const payload = {
         shop,
@@ -780,8 +781,7 @@ export default function SettingsRoute() {
         defaultCurrency: step1Data.defaultCurrency,
         baseCurrency: "USD",
         placement: normalizedPlacement,
-        fixedCorner:
-          normalizedPlacement === "fixed" ? data.fixedCorner : null,
+        fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
         distanceTop: data.distanceTop,
         distanceRight: data.distanceRight,
         distanceBottom: data.distanceBottom,
@@ -791,7 +791,9 @@ export default function SettingsRoute() {
       console.log("📝 [Step2Save] Payload:", payload);
 
       try {
-        const apiUrl = "/api/merchant-settings";
+        const base = getApiBasePath();
+        const apiUrl = `${base}/api/merchant-settings`;
+
         console.log("📡 [Step2Save] POST URL:", apiUrl);
 
         const res = await fetch(apiUrl, {
