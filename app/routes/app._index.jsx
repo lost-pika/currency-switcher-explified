@@ -792,12 +792,15 @@ export default function SettingsRoute() {
     console.log("⑦ POST →", apiUrl);
 
     try {
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
+      const res = await fetch(`${window.location.origin}/api/merchant-settings`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+  credentials: "include",
+});
+
+
+      console.log("absdsf");
 
       console.log("⑧ Response status:", res.status);
 
