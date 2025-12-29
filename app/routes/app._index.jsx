@@ -1,5 +1,32 @@
 import React, { useState, useCallback, useEffect } from "react";
 
+import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
+import { useLoaderData } from "react-router";
+
+
+export const loader = async ({ request }) => {
+  const { session } = await authenticate.admin(request);
+
+  const settings = await prisma.merchantSettings.findUnique({
+    where: { shop: session.shop },
+  });
+
+  return Response.json({
+    settings: settings ?? {
+      selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
+      defaultCurrency: "INR",
+      placement: "fixed",
+      fixedCorner: "bottom-left",
+      distanceTop: 16,
+      distanceRight: 16,
+      distanceBottom: 16,
+      distanceLeft: 16,
+    },
+  });
+};
+
+
 /* -------------------------------------------------
    CONSTANTS
 ------------------------------------------------- */
@@ -650,6 +677,8 @@ function ConfirmationScreen({ onReview }) {
 ------------------------------------------------- */
 export default function SettingsRoute() {
   const [step, setStep] = useState(1);
+  const { settings } = useLoaderData();
+
   const [step1Data, setStep1Data] = useState({
     currencies: [],
     defaultCurrency: "",
@@ -657,43 +686,7 @@ export default function SettingsRoute() {
   const [loading, setLoading] = useState(true);
 
   // load settings
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/merchant-settings", {
-          credentials: "include",
-        });
 
-        if (!res.ok) throw new Error("No settings");
-
-        const data = await res.json();
-
-        setStep1Data({
-          currencies: data.selectedCurrencies ?? DEFAULT_SELECTED,
-          defaultCurrency: data.defaultCurrency ?? "INR",
-          placement: data.placement ?? "fixed",
-          fixedCorner: data.fixedCorner ?? "bottom-right",
-          distanceTop: data.distanceTop ?? 16,
-          distanceRight: data.distanceRight ?? 16,
-          distanceBottom: data.distanceBottom ?? 16,
-          distanceLeft: data.distanceLeft ?? 16,
-        });
-      } catch {
-        setStep1Data({
-          currencies: DEFAULT_SELECTED,
-          defaultCurrency: "INR",
-          placement: "fixed",
-          fixedCorner: "bottom-right",
-          distanceTop: 16,
-          distanceRight: 16,
-          distanceBottom: 16,
-          distanceLeft: 16,
-        });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   const handleStep1Save = useCallback((data) => {
     console.log("📝 [Step1] Saving:", data);
