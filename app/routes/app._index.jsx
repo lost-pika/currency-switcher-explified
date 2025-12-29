@@ -763,7 +763,7 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
-  const handleStep2Save = useCallback(
+ const handleStep2Save = useCallback(
   async (data) => {
     console.log("⑤ [Step2Save] START with:", data);
 
@@ -798,8 +798,8 @@ export default function SettingsRoute() {
 
     try {
       const base = getApiBasePath();
-      // ✅ ADD THIS: Tell Remix to call the action, not render a page
-      const apiUrl = `${base}/api/merchant-settings?_data=routes/api.merchant-settings`;
+      // ✅ NO ?_data= needed anymore - it's a pure resource route
+      const apiUrl = `${base}/api/merchant-settings`;
 
       console.log("⑦ POST →", apiUrl);
 
@@ -815,6 +815,7 @@ export default function SettingsRoute() {
       if (!res.ok) {
         const text = await res.text();
         console.error("❌ API error:", text);
+        alert(`Save failed: ${text}`);
         return false;
       }
 
@@ -823,12 +824,13 @@ export default function SettingsRoute() {
       return true;
     } catch (err) {
       console.error("❌ Network error:", err);
-      alert(err.message);
+      alert(`Network error: ${err.message}`);
       return false;
     }
   },
   [shop, step1Data]
 );
+
 
 
 
