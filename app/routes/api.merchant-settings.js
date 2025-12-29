@@ -1,58 +1,36 @@
-import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
+import { authenticate } from "../shopify.server";
 
-/**
- * Small helper to always return JSON (important for Remix + Vite)
- */
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-}
+const DISABLE_AUTH_FOR_DB_TEST =
+  process.env.DISABLE_AUTH_FOR_DB_TEST === "true";
 
-/* =====================================================
-   GET: Load merchant settings
-   ===================================================== */
+/* ---------------- GET ---------------- */
 export async function loader({ request }) {
-  // 🔐 Required for embedded Shopify apps
-  await authenticate.admin(request);
+  if (!DISABLE_AUTH_FOR_DB_TEST) {
+    await authenticate.admin(request);
+  }
 
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
 
   if (!shop) {
-    return jsonResponse({ error: "Missing shop" }, 400);
+    return new Response(
+      JSON.stringify({ error: "Missing shop" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   const settings = await prisma.merchantSettings.findUnique({
     where: { shop },
   });
 
-  return jsonResponse({
-    data:
-      settings ?? {
-        selectedCurrencies: ["USD", "EUR", "INR", "CAD"],
-        defaultCurrency: "INR",
-        baseCurrency: "USD",
-        placement: "fixed",
-        fixedCorner: "bottom-right",
-        distanceTop: 16,
-        distanceRight: 16,
-        distanceBottom: 16,
-        distanceLeft: 16,
-      },
-  });
+  return new Response(
+    JSON.stringify({ success: true, data: settings }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 }
 
-/* =====================================================
-   POST: Save merchant settings
-   ===================================================== */
-const DISABLE_AUTH_FOR_DB_TEST =
-  process.env.DISABLE_AUTH_FOR_DB_TEST === "true";
-
+/* ---------------- POST ---------------- */
 export async function action({ request }) {
   if (!DISABLE_AUTH_FOR_DB_TEST) {
     await authenticate.admin(request);
@@ -113,11 +91,6 @@ export async function action({ request }) {
   );
 }
 
-
-
-/**
- * Dummy default export so Remix treats this as a valid route module
- */
 export default function ApiRoute() {
   return null;
 }
