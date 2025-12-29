@@ -767,8 +767,8 @@ export default function SettingsRoute() {
       data.placement === "Fixed Position"
         ? "fixed"
         : data.placement === "Inline with the header"
-        ? "inline"
-        : "hidden";
+          ? "inline"
+          : "hidden";
 
     const payload = {
       shop,
@@ -776,8 +776,7 @@ export default function SettingsRoute() {
       defaultCurrency: step1Data.defaultCurrency,
       baseCurrency: "USD",
       placement: normalizedPlacement,
-      fixedCorner:
-        normalizedPlacement === "fixed" ? data.fixedCorner : null,
+      fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
       distanceTop: data.distanceTop,
       distanceRight: data.distanceRight,
       distanceBottom: data.distanceBottom,
@@ -792,15 +791,14 @@ export default function SettingsRoute() {
     console.log("⑦ POST →", apiUrl);
 
     try {
-      const res = await fetch(`${window.location.origin}/api/merchant-settings`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-  credentials: "include",
-});
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
 
-
-      console.log("absdsf");
+      console.loh("akjdk")
 
       console.log("⑧ Response status:", res.status);
 
