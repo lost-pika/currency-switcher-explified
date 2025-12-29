@@ -1,7 +1,6 @@
 import { prisma } from "../db.server";
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }) {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
 
@@ -20,10 +19,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       where: { shop },
     });
 
-    return new Response(JSON.stringify({ data: settings }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ data: settings }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     console.error("❌ Loader error:", error);
     return new Response(
@@ -36,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }) {
   if (request.method !== "POST") {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
@@ -104,13 +106,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
     console.log("✅ [ACTION] Settings saved:", result.shop);
 
-    return new Response(null, {
-      status: 204,
-    });
+    return new Response(null, { status: 204 });
   } catch (error) {
     console.error("❌ Action error:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to save settings", details: String(error) }),
+      JSON.stringify({
+        error: "Failed to save settings",
+        details: String(error),
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -119,4 +122,4 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-// ✅ NO DEFAULT EXPORT - this must be completely empty
+// ✅ NO DEFAULT EXPORT
