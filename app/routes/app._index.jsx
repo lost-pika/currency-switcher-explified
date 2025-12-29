@@ -692,7 +692,10 @@ export default function SettingsRoute() {
 
         console.log("🌐 Fetching from:", apiUrl);
 
-        const res = await fetch(apiUrl, { credentials: "include" })
+        const res = await fetch(`${apiUrl}?shop=${shop}`, {
+  credentials: "include",
+});
+
 
 
         if (!res.ok) {
@@ -772,6 +775,7 @@ export default function SettingsRoute() {
         : "hidden";
 
     const payload = {
+      shop,
   currencies: step1Data.currencies,
   defaultCurrency: step1Data.defaultCurrency,
   baseCurrency: "USD",
