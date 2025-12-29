@@ -799,27 +799,27 @@ export default function SettingsRoute() {
 
         console.log("📡 [Step2Save] POST URL:", apiUrl);
 
-        const res = await fetch(`${apiUrl}?shop=${shop}`, {
+       const res = await fetch(apiUrl, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  credentials: "include",
   body: JSON.stringify(payload),
+  credentials: "include",
 });
 
+console.log("📊 Status:", res.status);
 
-        console.log("📊 [Step2Save] Status:", res.status);
+if (!res.ok) {
+  const body = await res.text();
+  console.error("❌ API error:", body);
+  alert(`API error ${res.status}`);
+  return;
+}
 
-        if (!res.ok) {
-          const body = await res.text();
-          console.error("❌ [Step2Save] Error body:", body);
-          alert(`API error ${res.status}`);
-          return;
-        }
+// ✅ DO NOT parse JSON
+console.log("✅ Saved successfully");
+setStep(3);
 
-        const saved = await res.json();
-        console.log("✅ [Step2Save] Saved:", saved);
 
-        setStep(3);
       } catch (err) {
         console.error("❌ [Step2Save] Error:", err);
         alert(err.message);
