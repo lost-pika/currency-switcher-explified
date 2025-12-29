@@ -332,25 +332,23 @@ function PlacementSelector({
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
- const handleSave = async () => {
-  console.log("① handleSave start");
-  setIsSaving(true);
+  const handleSave = async () => {
+    console.log("① handleSave start");
+    setIsSaving(true);
 
-  // Parent handles everything (API + step change)
-  await onSave({
-    placement,
-    fixedCorner,
-    distanceTop,
-    distanceRight,
-    distanceBottom,
-    distanceLeft,
-  });
+    // Parent handles everything (API + step change)
+    await onSave({
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    });
 
-  // ❌ DO NOT setIsSaving(false)
-  // Component will unmount when step changes
-};
-
-
+    // ❌ DO NOT setIsSaving(false)
+    // Component will unmount when step changes
+  };
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
@@ -693,10 +691,8 @@ export default function SettingsRoute() {
         console.log("🌐 Fetching from:", apiUrl);
 
         const res = await fetch(`${apiUrl}?shop=${shop}`, {
-  credentials: "include",
-});
-
-
+          credentials: "include",
+        });
 
         if (!res.ok) {
           console.warn(
@@ -776,17 +772,17 @@ export default function SettingsRoute() {
 
     const payload = {
       shop,
-  currencies: step1Data.currencies,
-  defaultCurrency: step1Data.defaultCurrency,
-  baseCurrency: "USD",
-  placement: normalizedPlacement,
-  fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
-  distanceTop: data.distanceTop,
-  distanceRight: data.distanceRight,
-  distanceBottom: data.distanceBottom,
-  distanceLeft: data.distanceLeft,
-};
-
+      currencies: step1Data.currencies,
+      defaultCurrency: step1Data.defaultCurrency,
+      baseCurrency: "USD",
+      placement: normalizedPlacement,
+      fixedCorner:
+        normalizedPlacement === "fixed" ? data.fixedCorner : null,
+      distanceTop: data.distanceTop,
+      distanceRight: data.distanceRight,
+      distanceBottom: data.distanceBottom,
+      distanceLeft: data.distanceLeft,
+    };
 
     console.log("⑥ Payload:", payload);
 
@@ -795,31 +791,43 @@ export default function SettingsRoute() {
 
     console.log("⑦ POST →", apiUrl);
 
-    const res = await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
 
-    console.log("⑧ Response status:", res.status);
+      console.log("⑧ Response status:", res.status);
+      console.log("⑧ Response headers:", Object.fromEntries(res.headers));
 
-    if (!res.ok) {
+      // ✅ 204 has no body, don't try to parse JSON
+      if (res.status === 204) {
+        console.log("⑨ Save successful (204 No Content) → moving to step 3");
+        setStep(3);
+        return;
+      }
+
+      // For other success codes
+      if (res.ok) {
+        const text = await res.text();
+        console.log("⑨ Save successful → moving to step 3, response:", text);
+        setStep(3);
+        return;
+      }
+
+      // Error handling
       const text = await res.text();
-      console.error("❌ API error:", text);
-      alert(`Save failed: ${text}`);
-      return;
+      console.error("❌ API error:", res.status, text);
+      alert(`Save failed: ${res.status} - ${text}`);
+    } catch (err) {
+      console.error("❌ Fetch error:", err);
+      alert(`Network error: ${err.message}`);
     }
-
-    console.log("⑨ Save successful → moving to step 3");
-    setStep(3);
   },
   [shop, step1Data]
 );
-
-
-
-
 
   if (loading) {
     return (
@@ -879,8 +887,3 @@ export default function SettingsRoute() {
 
   return null;
 }
-
-
-
-
-
