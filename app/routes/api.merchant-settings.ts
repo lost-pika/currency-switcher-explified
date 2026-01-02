@@ -17,6 +17,11 @@ export async function action({ request }) {
     );
   }
 
+  if (request.method === "GET") {
+  console.log("📥 GET /api/merchant-settings", shop);
+}
+
+
   // 🔹 POST → save settings
   if (request.method === "POST") {
     const body = await request.json();

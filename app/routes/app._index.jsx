@@ -332,22 +332,21 @@ function PlacementSelector({
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
   const handleSave = async () => {
-  try {
-    setIsSaving(true);
-    await onSave({
-      placement,
-      fixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    });
-  } catch (e) {
-    console.error(e);
-    setIsSaving(false);
-  }
-};
-
+    try {
+      setIsSaving(true);
+      await onSave({
+        placement,
+        fixedCorner,
+        distanceTop,
+        distanceRight,
+        distanceBottom,
+        distanceLeft,
+      });
+    } catch (e) {
+      console.error(e);
+      setIsSaving(false);
+    }
+  };
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
@@ -660,11 +659,27 @@ export default function SettingsRoute() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/merchant-settings");
+        const res = await fetch("/api/merchant-settings", {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        });
 
-        if (!res.ok) throw new Error("Failed to load");
+        if (!res.ok) {
+          throw new Error(`Failed to load: ${res.status}`);
+        }
 
-        const json = await res.json();
+        const text = await res.text();
+
+        if (!text) {
+          // no settings yet → use defaults
+          throw new Error("Empty response");
+        }
+
+
+        const json = JSON.parse(text);
+
         const data = json.data || {};
 
         setStep1Data({
@@ -757,37 +772,36 @@ export default function SettingsRoute() {
   // );
 
   const handleStep2Save = useCallback(
-  async (data) => {
-    const normalizedPlacement =
-      data.placement === "Fixed Position"
-        ? "fixed"
-        : data.placement === "Inline with the header"
-        ? "inline"
-        : "hidden";
+    async (data) => {
+      const normalizedPlacement =
+        data.placement === "Fixed Position"
+          ? "fixed"
+          : data.placement === "Inline with the header"
+            ? "inline"
+            : "hidden";
 
-    const payload = {
-      currencies: step1Data.currencies,
-      defaultCurrency: step1Data.defaultCurrency,
-      baseCurrency: "USD",
-      placement: normalizedPlacement,
-      fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
-      distanceTop: data.distanceTop,
-      distanceRight: data.distanceRight,
-      distanceBottom: data.distanceBottom,
-      distanceLeft: data.distanceLeft,
-    };
+      const payload = {
+        currencies: step1Data.currencies,
+        defaultCurrency: step1Data.defaultCurrency,
+        baseCurrency: "USD",
+        placement: normalizedPlacement,
+        fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
+        distanceTop: data.distanceTop,
+        distanceRight: data.distanceRight,
+        distanceBottom: data.distanceBottom,
+        distanceLeft: data.distanceLeft,
+      };
 
-    const res = await fetch("/api/merchant-settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch("/api/merchant-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (res.ok) setStep(3);
-  },
-  [step1Data],
-);
-
+      if (res.ok) setStep(3);
+    },
+    [step1Data],
+  );
 
   if (loading) {
     return (
@@ -795,9 +809,7 @@ export default function SettingsRoute() {
         <div className="text-lg font-semibold text-gray-700">
           Loading settings…
         </div>
-        <p className="text-sm text-gray-500 mt-2">
-          Loading merchant settings…
-        </p>
+        <p className="text-sm text-gray-500 mt-2">Loading merchant settings…</p>
       </div>
     );
   }
