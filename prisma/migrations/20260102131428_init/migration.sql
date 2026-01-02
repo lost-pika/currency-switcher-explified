@@ -1,11 +1,23 @@
-/*
-  Warnings:
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "shop" TEXT NOT NULL,
+    "state" TEXT NOT NULL,
+    "isOnline" BOOLEAN NOT NULL DEFAULT false,
+    "scope" TEXT,
+    "expires" TIMESTAMP(3),
+    "accessToken" TEXT NOT NULL,
+    "userId" BIGINT,
+    "firstName" TEXT,
+    "lastName" TEXT,
+    "email" TEXT,
+    "accountOwner" BOOLEAN NOT NULL DEFAULT false,
+    "locale" TEXT,
+    "collaborator" BOOLEAN DEFAULT false,
+    "emailVerified" BOOLEAN DEFAULT false,
 
-  - You are about to drop the `MerchantSettings` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- DropTable
-DROP TABLE "MerchantSettings";
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "merchant_settings" (
@@ -14,7 +26,7 @@ CREATE TABLE "merchant_settings" (
     "selectedCurrencies" TEXT[] DEFAULT ARRAY['USD', 'EUR']::TEXT[],
     "defaultCurrency" TEXT NOT NULL DEFAULT 'USD',
     "baseCurrency" TEXT NOT NULL DEFAULT 'USD',
-    "placement" TEXT NOT NULL DEFAULT 'Fixed Position',
+    "placement" TEXT NOT NULL DEFAULT 'fixed',
     "fixedCorner" TEXT NOT NULL DEFAULT 'bottom-right',
     "distanceTop" INTEGER NOT NULL DEFAULT 16,
     "distanceRight" INTEGER NOT NULL DEFAULT 16,
