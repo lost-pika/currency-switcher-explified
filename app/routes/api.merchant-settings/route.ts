@@ -1,11 +1,10 @@
-import { prisma } from "../db.server";
-import { authenticate } from "../shopify.server";
+import { prisma } from "../../db.server";
+import { authenticate } from "../../shopify.server";
 
 export async function action({ request }) {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
 
-  // 🔹 GET → load settings
   if (request.method === "GET") {
     const settings = await prisma.merchantSettings.findUnique({
       where: { shop },
@@ -17,12 +16,6 @@ export async function action({ request }) {
     );
   }
 
-  if (request.method === "GET") {
-  console.log("📥 GET /api/merchant-settings", shop);
-}
-
-
-  // 🔹 POST → save settings
   if (request.method === "POST") {
     const body = await request.json();
 
@@ -68,5 +61,5 @@ export async function action({ request }) {
     return new Response(null, { status: 204 });
   }
 
-  return new Response("Method not allowed", { status: 405 });
+  return new Response("Method Not Allowed", { status: 405 });
 }
