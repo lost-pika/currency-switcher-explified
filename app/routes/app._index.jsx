@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { getApiBasePath } from "../src/utils/getApiBasePath";
 
 /* -------------------------------------------------
    CONSTANTS
@@ -333,10 +332,8 @@ function PlacementSelector({
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
   const handleSave = async () => {
-    console.log("① handleSave start");
+  try {
     setIsSaving(true);
-
-    // Parent handles everything (API + step change)
     await onSave({
       placement,
       fixedCorner,
@@ -345,10 +342,12 @@ function PlacementSelector({
       distanceBottom,
       distanceLeft,
     });
+  } catch (e) {
+    console.error(e);
+    setIsSaving(false);
+  }
+};
 
-    // ❌ DO NOT setIsSaving(false)
-    // Component will unmount when step changes
-  };
 
   const handleDistanceChange = (setter) => (event) => {
     const value = event.target.value.replace(/[^0-9]/g, "");
@@ -656,68 +655,17 @@ export default function SettingsRoute() {
     defaultCurrency: "",
   });
   const [loading, setLoading] = useState(true);
-  const [shop, setShop] = useState(null);
-
-  // get shop
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    let shopParam = params.get("shop");
-    console.log("📝 Shop from URL:", shopParam);
-
-    if (!shopParam) {
-      shopParam = "currency-switcher-app-2.myshopify.com";
-      console.log("✅ Using fallback shop:", shopParam);
-    }
-
-    setShop(shopParam);
-  }, []);
 
   // load settings
   useEffect(() => {
-    if (!shop) {
-      console.warn("⚠️ No shop param available");
-      setLoading(false);
-      return;
-    }
-
     (async () => {
       try {
-        console.log("📝 Loading settings for shop:", shop);
+        const res = await fetch("/api/merchant-settings");
 
-        const base = "https://currency-switcher-explified.vercel.app";
-        const apiUrl = `${base}/api/merchant-settings`;
-
-        console.log("🌐 Fetching from:", apiUrl);
-
-        const res = await fetch(`${apiUrl}?shop=${shop}`, {
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          console.warn(
-            "⚠️ Settings fetch status:",
-            res.status,
-            "Using defaults",
-          );
-          setStep1Data({
-            currencies: DEFAULT_SELECTED,
-            defaultCurrency: "INR",
-            placement: "fixed",
-            fixedCorner: "bottom-right",
-            distanceTop: 16,
-            distanceRight: 16,
-            distanceBottom: 16,
-            distanceLeft: 16,
-          });
-          setLoading(false);
-          return;
-        }
+        if (!res.ok) throw new Error("Failed to load");
 
         const json = await res.json();
-        console.log("✅ Settings loaded:", json);
-
-        const data = json.data || json;
+        const data = json.data || {};
 
         setStep1Data({
           currencies: data.selectedCurrencies ?? DEFAULT_SELECTED,
@@ -729,8 +677,7 @@ export default function SettingsRoute() {
           distanceBottom: data.distanceBottom ?? 16,
           distanceLeft: data.distanceLeft ?? 16,
         });
-      } catch (err) {
-        console.error("❌ Error loading settings:", err);
+      } catch {
         setStep1Data({
           currencies: DEFAULT_SELECTED,
           defaultCurrency: "INR",
@@ -745,7 +692,7 @@ export default function SettingsRoute() {
         setLoading(false);
       }
     })();
-  }, [shop]);
+  }, []);
 
   const handleStep1Save = useCallback((data) => {
     console.log("📝 [Step1] Saving:", data);
@@ -753,25 +700,72 @@ export default function SettingsRoute() {
     setStep(2);
   }, []);
 
+  // const handleStep2Save = useCallback(
+  //   async (data) => {
+  //     console.log("⑤ [Step2Save] START with:", data);
+
+  //     const normalizedPlacement =
+  //       data.placement === "Fixed Position"
+  //         ? "fixed"
+  //         : data.placement === "Inline with the header"
+  //           ? "inline"
+  //           : "hidden";
+
+  //     const payload = {
+  //       currencies: step1Data.currencies,
+  //       defaultCurrency: step1Data.defaultCurrency,
+  //       baseCurrency: "USD",
+  //       placement: normalizedPlacement,
+  //       fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
+  //       distanceTop: data.distanceTop,
+  //       distanceRight: data.distanceRight,
+  //       distanceBottom: data.distanceBottom,
+  //       distanceLeft: data.distanceLeft,
+  //     };
+
+  //     console.log("⑥ Payload:", payload);
+
+  //     // ✅ HARDCODED - same as your working GET request
+  //     const apiUrl = "/api/merchant-settings";
+  //     console.log("⑦ POST →", apiUrl);
+
+  //     try {
+  //       const res = await fetch("/api/merchant-settings", {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify(payload),
+  //       });
+
+  //       console.log("⑧ Response status:", res.status);
+
+  //       if (res.ok) {
+  //         setStep(3);
+  //         return;
+  //       }
+
+  //       const text = await res.text();
+  //       console.error("❌ Error:", res.status, text);
+  //       alert(`Failed: ${res.status}`);
+  //     } catch (err) {
+  //       console.error("❌ Fetch failed:", err);
+  //       alert(err.message);
+  //     }
+  //   },
+  //   [step1Data],
+  // );
+
   const handleStep2Save = useCallback(
   async (data) => {
-    console.log("⑤ [Step2Save] START with:", data);
-
-    if (!shop) {
-      console.error("❌ Shop missing");
-      alert("Shop not found");
-      return;
-    }
-
     const normalizedPlacement =
       data.placement === "Fixed Position"
         ? "fixed"
         : data.placement === "Inline with the header"
-          ? "inline"
-          : "hidden";
+        ? "inline"
+        : "hidden";
 
     const payload = {
-      shop,
       currencies: step1Data.currencies,
       defaultCurrency: step1Data.defaultCurrency,
       baseCurrency: "USD",
@@ -783,43 +777,15 @@ export default function SettingsRoute() {
       distanceLeft: data.distanceLeft,
     };
 
-    console.log("⑥ Payload:", payload);
+    const res = await fetch("/api/merchant-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-    // ✅ HARDCODED - same as your working GET request
-    const apiUrl = `https://currency-switcher-explified.vercel.app/api/merchant-settings`;
-    console.log("⑦ POST →", apiUrl);
-
-    try {
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
-
-      console.log("⑧ Response status:", res.status);
-
-      if (res.status === 204) {
-        console.log("⑨ Save successful (204)");
-        setStep(3);
-        return;
-      }
-
-      if (res.ok) {
-        console.log("⑨ Save successful (", res.status, ")");
-        setStep(3);
-        return;
-      }
-
-      const text = await res.text();
-      console.error("❌ Error:", res.status, text);
-      alert(`Failed: ${res.status}`);
-    } catch (err) {
-      console.error("❌ Fetch failed:", err);
-      alert(`Error: ${err.message}`);
-    }
+    if (res.ok) setStep(3);
   },
-  [shop, step1Data]
+  [step1Data],
 );
 
 
@@ -830,7 +796,7 @@ export default function SettingsRoute() {
           Loading settings…
         </div>
         <p className="text-sm text-gray-500 mt-2">
-          {shop ? `Loading for shop: ${shop}` : "Waiting for shop parameter..."}
+          Loading merchant settings…
         </p>
       </div>
     );
