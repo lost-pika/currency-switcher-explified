@@ -1,26 +1,68 @@
 import { prisma } from "../db.server";
 import { authenticate } from "../shopify.server";
 
-export async function action({ request }) {
-  const { session } = await authenticate.admin(request);
-  const shop = session.shop;
+/* -----------------------------
+   GET → loader
+------------------------------ */
+export async function loader({ request }) {
+  let session;
 
-  if (request.method === "GET") {
-    const settings = await prisma.merchantSettings.findUnique({
-      where: { shop },
-    });
-
-    return new Response(
-      JSON.stringify({ data: settings }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+  try {
+    ({ session } = await authenticate.admin(request));
+  } catch (err) {
+    // 🔥 REQUIRED for Shopify OAuth redirect
+    if (err instanceof Response) {
+      return err;
+    }
+    throw err;
   }
 
-  if (request.method === "POST") {
-    const body = await request.json();
+  const shop = session.shop;
 
-    const {
-      currencies,
+  const settings = await prisma.merchantSettings.findUnique({
+    where: { shop },
+  });
+
+  return new Response(
+    JSON.stringify({ data: settings }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+}
+
+/* -----------------------------
+   POST → action
+------------------------------ */
+export async function action({ request }) {
+  let session;
+
+  try {
+    ({ session } = await authenticate.admin(request));
+  } catch (err) {
+    if (err instanceof Response) {
+      return err;
+    }
+    throw err;
+  }
+
+  const shop = session.shop;
+  const body = await request.json();
+
+  const {
+    currencies,
+    defaultCurrency,
+    baseCurrency,
+    placement,
+    fixedCorner,
+    distanceTop,
+    distanceRight,
+    distanceBottom,
+    distanceLeft,
+  } = body;
+
+  await prisma.merchantSettings.upsert({
+    where: { shop },
+    update: {
+      selectedCurrencies: currencies,
       defaultCurrency,
       baseCurrency,
       placement,
@@ -29,37 +71,20 @@ export async function action({ request }) {
       distanceRight,
       distanceBottom,
       distanceLeft,
-    } = body;
+    },
+    create: {
+      shop,
+      selectedCurrencies: currencies,
+      defaultCurrency,
+      baseCurrency,
+      placement,
+      fixedCorner,
+      distanceTop,
+      distanceRight,
+      distanceBottom,
+      distanceLeft,
+    },
+  });
 
-    await prisma.merchantSettings.upsert({
-      where: { shop },
-      update: {
-        selectedCurrencies: currencies,
-        defaultCurrency,
-        baseCurrency,
-        placement,
-        fixedCorner,
-        distanceTop,
-        distanceRight,
-        distanceBottom,
-        distanceLeft,
-      },
-      create: {
-        shop,
-        selectedCurrencies: currencies,
-        defaultCurrency,
-        baseCurrency,
-        placement,
-        fixedCorner,
-        distanceTop,
-        distanceRight,
-        distanceBottom,
-        distanceLeft,
-      },
-    });
-
-    return new Response(null, { status: 204 });
-  }
-
-  return new Response("Method Not Allowed", { status: 405 });
+  return new Response(null, { status: 204 });
 }
