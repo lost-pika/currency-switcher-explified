@@ -24,12 +24,18 @@
     defaultCurrency: "INR",
     baseCurrency: "USD",
     placement: "Fixed Position",
-    fixedCorner: "bottom-right",
+    fixedCorner: "top-right",
     distanceTop: 16,
     distanceRight: 16,
     distanceBottom: 16,
     distanceLeft: 16,
   };
+
+  const SHOP =
+    window.__MLV_SHOP__ ||
+    window.__SHOP__ ||
+    (window.Shopify && window.Shopify.shop) ||
+    window.location.hostname;
 
   let cachedDBSettings = null;
 
@@ -135,14 +141,11 @@
 
   async function loadSettings() {
     try {
-      const shop =
-        window.__SHOP__ ||
-        (window.Shopify && window.Shopify.shop) ||
-        window.location.hostname;
+      const shop = SHOP;
 
       console.log("🏪 Shop:", shop);
 
-      const url = `${API_HOST}/api/merchant-settings?shop=${encodeURIComponent(
+      const url = `${API_HOST}/api/storefront-settings?shop=${encodeURIComponent(
         shop,
       )}`;
       console.log("🔗 Loading settings from:", url);
@@ -160,11 +163,12 @@
       const data = await r.json().catch(() => null);
       console.log("✅ settings loaded:", data);
 
-      if (!data || !data.data) {
+      if (!data || !data.settings) {
         return { ...FALLBACK_SETTINGS };
       }
 
-      const d = data.data;
+      const d = data.settings;
+
       const result = {
         selectedCurrencies:
           d.selectedCurrencies || FALLBACK_SETTINGS.selectedCurrencies,
@@ -207,9 +211,7 @@
 
   function findNodes() {
     const s = new Set();
-    SEL.forEach((q) =>
-      document.querySelectorAll(q).forEach((e) => s.add(e)),
-    );
+    SEL.forEach((q) => document.querySelectorAll(q).forEach((e) => s.add(e)));
     return [...s];
   }
 
@@ -339,8 +341,9 @@
     const m = document.createElement("div");
     m.setAttribute("data-mlv-menu", "");
 
-    (mergedSettings?.selectedCurrencies ||
-      FALLBACK_SETTINGS.selectedCurrencies).forEach((c) => {
+    (
+      mergedSettings?.selectedCurrencies || FALLBACK_SETTINGS.selectedCurrencies
+    ).forEach((c) => {
       const d = document.createElement("div");
       d.textContent = c;
       d.style.cursor = "pointer";
@@ -355,10 +358,24 @@
 
     b.onclick = (e) => {
       e.stopPropagation();
+
       const r = b.getBoundingClientRect();
-      m.style.display = m.style.display === "none" ? "block" : "none";
+      const menuHeight = m.offsetHeight || 200;
+      const spaceBelow = window.innerHeight - r.bottom;
+      const spaceAbove = r.top;
+
+      m.style.display = "block";
       m.style.left = `${r.left}px`;
-      m.style.top = `${r.bottom + 4}px`;
+
+      if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
+        // Open upward
+        m.style.top = "auto";
+        m.style.bottom = `${window.innerHeight - r.top + 4}px`;
+      } else {
+        // Open downward
+        m.style.bottom = "auto";
+        m.style.top = `${r.bottom + 4}px`;
+      }
     };
 
     document.addEventListener("click", () => (m.style.display = "none"));
@@ -453,9 +470,7 @@
     const def = st.defaultCurrency || detected;
     const saved = localStorage.getItem(KEY) || def;
 
-    console.log(
-      `🎯 Detected: ${detected}, Default: ${def}, Saved: ${saved}`
-    );
+    console.log(`🎯 Detected: ${detected}, Default: ${def}, Saved: ${saved}`);
 
     createPicker(st, saved, async (c) => {
       localStorage.setItem(KEY, c);
@@ -468,7 +483,7 @@
   // Listen for theme editor settings changes (real-time updates)
   window.addEventListener("mlv:theme:settings:update", async (e) => {
     console.log("🎨 Theme settings updated, re-rendering...", e.detail);
-    
+
     // Use cached DB settings or fallback
     const dbSettings = cachedDBSettings || {
       selectedCurrencies: FALLBACK_SETTINGS.selectedCurrencies,
