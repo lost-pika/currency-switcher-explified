@@ -309,20 +309,31 @@
     const themeSettings = window.__MLV_THEME_SETTINGS__ || {};
     const mergedSettings = {
       ...st,
-      placement: themeSettings.placement || st?.placement,
-      fixedCorner: themeSettings.fixedCorner || st?.fixedCorner,
+      placement:
+        themeSettings.placement !== undefined
+          ? themeSettings.placement
+          : st?.placement,
+
+      fixedCorner:
+        themeSettings.fixedCorner !== undefined
+          ? themeSettings.fixedCorner
+          : st?.fixedCorner,
+
       distanceTop:
         themeSettings.distanceTop !== undefined
           ? themeSettings.distanceTop
           : st?.distanceTop,
+
       distanceRight:
         themeSettings.distanceRight !== undefined
           ? themeSettings.distanceRight
           : st?.distanceRight,
+
       distanceBottom:
         themeSettings.distanceBottom !== undefined
           ? themeSettings.distanceBottom
           : st?.distanceBottom,
+
       distanceLeft:
         themeSettings.distanceLeft !== undefined
           ? themeSettings.distanceLeft
@@ -470,14 +481,15 @@
     const def = st.defaultCurrency || detected;
     const saved = localStorage.getItem(KEY) || def;
 
-    console.log(`🎯 Detected: ${detected}, Default: ${def}, Saved: ${saved}`);
-
     createPicker(st, saved, async (c) => {
       localStorage.setItem(KEY, c);
       await runFor(c, st);
     });
 
     await runFor(saved, st);
+
+    // ✅ ADD THIS
+    window.__MLV_WIDGET_READY__ = true;
   }
 
   // Listen for theme editor settings changes (real-time updates)
