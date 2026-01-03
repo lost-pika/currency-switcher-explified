@@ -8,7 +8,7 @@
   const KEY = "mlv_currency_choice_v2";
   const TTL = 1000 * 60 * 15;
 
-  const SEL = [
+  const PRICE_SELECTORS = [
     "[data-price]",
     ".price",
     ".product__price",
@@ -20,10 +20,11 @@
   ];
 
   const FALLBACK_SETTINGS = {
-    selectedCurrencies: ["USD", "EUR", "INR"],
+    selectedCurrencies: ["USD", "EUR", "INR", "AUD"],
     defaultCurrency: "INR",
     baseCurrency: "USD",
-    fixedCorner: "top-right",
+    placement: "Fixed Position",
+    fixedCorner: "bottom-right",
     distanceTop: 16,
     distanceRight: 16,
     distanceBottom: 16,
@@ -35,231 +36,226 @@
     (window.Shopify && window.Shopify.shop) ||
     window.location.hostname;
 
-  /* ================= UTILS ================= */
-
+  /* ================= STORAGE ================= */
   const now = () => Date.now();
 
-  function sset(k, v, ttl = TTL) {
+  function cacheSet(k, v) {
     try {
-      localStorage.setItem(k, JSON.stringify({ v, x: now() + ttl }));
+      localStorage.setItem(k, JSON.stringify({ v, x: now() + TTL }));
     } catch {}
   }
 
-  function sget(k) {
+  function cacheGet(k) {
     try {
-      const r = localStorage.getItem(k);
-      if (!r) return null;
-      const o = JSON.parse(r);
-      if (!o || now() > o.x) {
-        localStorage.removeItem(k);
-        return null;
-      }
-      return o.v;
+      const r = JSON.parse(localStorage.getItem(k));
+      if (!r || now() > r.x) return null;
+      return r.v;
     } catch {
       return null;
     }
   }
 
-  function parseNum(s) {
-    const c = s.replace(/[^\d.,-]/g, "");
-    const v = parseFloat(c.replace(/,/g, ""));
-    return isNaN(v) ? null : v;
+  /* ================= HELPERS ================= */
+  function detectCurrency() {
+    try {
+      const lang = navigator.language.toLowerCase();
+      if (lang.includes("in")) return "INR";
+      if (lang.includes("gb")) return "GBP";
+      if (lang.includes("eu")) return "EUR";
+      return "USD";
+    } catch {
+      return "USD";
+    }
   }
 
-  function fmt(v, cur) {
+  function parseAmount(text) {
+    const n = parseFloat(text.replace(/[^\d.-]/g, ""));
+    return isNaN(n) ? null : n;
+  }
+
+  function formatAmount(val, cur) {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency: cur,
       maximumFractionDigits: 2,
-    }).format(v);
+    }).format(val);
   }
 
-  function findNodes() {
-    const s = new Set();
-    SEL.forEach((q) => document.querySelectorAll(q).forEach((e) => s.add(e)));
-    return [...s];
-  }
-
-  function convertEl(el, rate, cur) {
-    if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-    const n = parseNum(el.dataset.orig);
-    if (n === null) return;
-    el.textContent = fmt(n * rate, cur);
-  }
-
-  function revertEl(el) {
-    if (el.dataset.orig) el.textContent = el.dataset.orig;
+  function findPriceNodes() {
+    const set = new Set();
+    PRICE_SELECTORS.forEach((q) =>
+      document.querySelectorAll(q).forEach((el) => set.add(el))
+    );
+    return [...set];
   }
 
   /* ================= API ================= */
-
   async function fetchRates(base, target) {
-    const key = `rates_${base}_${target}`;
-    const cached = sget(key);
+    const key = `mlv_rate_${base}_${target}`;
+    const cached = cacheGet(key);
     if (cached) return cached;
 
-    const res = await fetch(
-      `${API_HOST}/api/rates?base=${base}&symbols=${target}`
-    );
-    const json = await res.json();
-    const rate = json?.rates?.[target];
+    try {
+      const r = await fetch(
+        `${API_HOST}/api/rates?base=${base}&symbols=${target}`
+      );
+      const j = await r.json();
+      if (j?.rates?.[target]) {
+        cacheSet(key, j.rates[target]);
+        return j.rates[target];
+      }
+    } catch {}
 
-    if (rate) sset(key, rate);
-    return rate;
+    return null;
   }
 
   async function loadSettings() {
     try {
-      const res = await fetch(
+      const r = await fetch(
         `${API_HOST}/api/storefront-settings?shop=${encodeURIComponent(SHOP)}`
       );
-      const json = await res.json();
-      return json?.settings || FALLBACK_SETTINGS;
+      const j = await r.json();
+      return j?.settings || FALLBACK_SETTINGS;
     } catch {
       return FALLBACK_SETTINGS;
     }
   }
 
-  /* ================= PICKER ================= */
+  /* ================= CONVERSION ================= */
+  async function convertPrices(cur, settings) {
+    const base = settings.baseCurrency;
+    if (cur === base) return;
 
-  async function createPicker(settings) {
+    const rate = await fetchRates(base, cur);
+    if (!rate) return;
+
+    findPriceNodes().forEach((el) => {
+      if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
+      const val = parseAmount(el.dataset.orig);
+      if (val !== null) {
+        el.textContent = formatAmount(val * rate, cur);
+      }
+    });
+  }
+
+  /* ================= UI ================= */
+  function injectCSS() {
+    if (document.getElementById("__mlv_css")) return;
+
+    const style = document.createElement("style");
+    style.id = "__mlv_css";
+    style.textContent = `
+#${PICK} {
+  position: fixed;
+  z-index: 2147483647;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#${MENU} {
+  position: fixed;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  display: none;
+  z-index: 2147483646;
+}
+
+#${MENU} div {
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+#${MENU} div:hover {
+  background: #f2f2f2;
+}
+`;
+    document.head.appendChild(style);
+  }
+
+  function place(el, s) {
+    if (s.fixedCorner.includes("top")) {
+      el.style.top = s.distanceTop + "px";
+      el.style.bottom = "auto";
+    } else {
+      el.style.bottom = s.distanceBottom + "px";
+      el.style.top = "auto";
+    }
+
+    if (s.fixedCorner.includes("right")) {
+      el.style.right = s.distanceRight + "px";
+      el.style.left = "auto";
+    } else {
+      el.style.left = s.distanceLeft + "px";
+      el.style.right = "auto";
+    }
+  }
+
+  function createWidget(settings) {
     document.getElementById(PICK)?.remove();
     document.getElementById(MENU)?.remove();
 
     const saved =
-      localStorage.getItem(KEY) || settings.defaultCurrency;
+      localStorage.getItem(KEY) ||
+      settings.defaultCurrency ||
+      detectCurrency();
 
-    /* ---------- BUTTON ---------- */
     const w = document.createElement("div");
     w.id = PICK;
-    w.innerHTML = `
-      <span>${saved}</span>
-      <span class="mlv-arrow">▾</span>
-    `;
+    w.innerHTML = `<span>${saved}</span><span>▾</span>`;
+    place(w, settings);
 
-    Object.assign(w.style, {
-      padding: "10px 32px 10px 14px",
-      background: "#fff",
-      border: "1px solid #ccc",
-      borderRadius: "8px",
-      cursor: "pointer",
-      position: "fixed",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      fontWeight: "500",
-      fontSize: "14px",
-      zIndex: 2147483647,
-      boxShadow: "0 2px 8px rgba(0,0,0,.12)",
-    });
-
-    const arrow = w.querySelector(".mlv-arrow");
-
-    /* ---------- DB POSITION ---------- */
-    if (
-      settings.fixedCorner === "top-left" ||
-      settings.fixedCorner === "top-right"
-    ) {
-      w.style.top = settings.distanceTop + "px";
-    } else {
-      w.style.bottom = settings.distanceBottom + "px";
-    }
-
-    if (
-      settings.fixedCorner === "top-right" ||
-      settings.fixedCorner === "bottom-right"
-    ) {
-      w.style.right = settings.distanceRight + "px";
-    } else {
-      w.style.left = settings.distanceLeft + "px";
-    }
-
-    /* ---------- MENU ---------- */
     const m = document.createElement("div");
     m.id = MENU;
 
-    Object.assign(m.style, {
-      position: "fixed",
-      background: "#fff",
-      border: "1px solid #ddd",
-      borderRadius: "6px",
-      boxShadow: "0 8px 24px rgba(0,0,0,.15)",
-      display: "none",
-      zIndex: 2147483646,
-      minWidth: "140px",
-    });
-
-    settings.selectedCurrencies.forEach((cur) => {
-      const d = document.createElement("div");
-      d.textContent = cur;
-      Object.assign(d.style, {
-        padding: "10px 14px",
-        cursor: "pointer",
-        borderBottom: "1px solid #eee",
-      });
-
-      d.onclick = async (e) => {
-        e.stopPropagation();
-        localStorage.setItem(KEY, cur);
-        w.firstChild.textContent = cur;
+    settings.selectedCurrencies.forEach((c) => {
+      const item = document.createElement("div");
+      item.textContent = c;
+      item.onclick = async () => {
+        localStorage.setItem(KEY, c);
+        w.children[0].textContent = c;
         m.style.display = "none";
-        arrow.textContent = "▾";
-
-        if (cur === settings.baseCurrency) {
-          findNodes().forEach(revertEl);
-          return;
-        }
-
-        const rate = await fetchRates(settings.baseCurrency, cur);
-        findNodes().forEach((el) => convertEl(el, rate, cur));
+        await convertPrices(c, settings);
       };
-
-      m.appendChild(d);
+      m.appendChild(item);
     });
 
-    /* ---------- TOGGLE + DIRECTION ---------- */
     w.onclick = (e) => {
       e.stopPropagation();
-
       const r = w.getBoundingClientRect();
-      const openUp = window.innerHeight - r.bottom < 200;
+      const openUp = r.bottom + 200 > window.innerHeight;
 
+      m.style.display = "block";
       m.style.left = r.left + "px";
-
-      if (openUp) {
-        m.style.top = "auto";
-        m.style.bottom = window.innerHeight - r.top + 6 + "px";
-        arrow.textContent = "▴";
-      } else {
-        m.style.bottom = "auto";
-        m.style.top = r.bottom + 6 + "px";
-        arrow.textContent = "▾";
-      }
-
-      m.style.display = m.style.display === "block" ? "none" : "block";
+      m.style.top = openUp ? "auto" : r.bottom + 6 + "px";
+      m.style.bottom = openUp
+        ? window.innerHeight - r.top + 6 + "px"
+        : "auto";
     };
 
-    document.addEventListener("click", () => {
-      m.style.display = "none";
-      arrow.textContent = "▾";
-    });
+    document.addEventListener("click", () => (m.style.display = "none"));
 
     document.body.appendChild(w);
     document.body.appendChild(m);
 
-    // initial conversion
-    if (saved !== settings.baseCurrency) {
-      const rate = await fetchRates(settings.baseCurrency, saved);
-      findNodes().forEach((el) => convertEl(el, rate, saved));
-    }
+    convertPrices(saved, settings);
   }
 
   /* ================= INIT ================= */
-
   async function init() {
+    injectCSS();
     const settings = await loadSettings();
-    console.log("✅ DB settings used:", settings);
-    createPicker(settings);
+    createWidget(settings);
   }
 
   document.readyState === "loading"
