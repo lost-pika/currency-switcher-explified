@@ -195,6 +195,7 @@
   gap: 6px;
 }
 
+
 #${MENU} {
   position: fixed;
   background: #fff;
@@ -205,10 +206,12 @@
   z-index: 2147483646;
 }
 
+
 #${MENU} div {
   padding: 10px 16px;
   cursor: pointer;
 }
+
 
 #${MENU} div:hover {
   background: #f2f2f2;
@@ -260,21 +263,21 @@
         e.stopPropagation();
         localStorage.setItem(KEY, c);
         w.children[0].textContent = c;
-        m.style.display = "none"; // keep, but
-        // remove this: m.remove();
+        m.style.display = "none";
+        m.remove();
         await convertPrices(c, settings);
       };
-
       m.appendChild(item);
     });
 
     if (settings.placement === "inline") {
       const header = findHeader();
       if (header) {
+        w.style.position = "relative"; // IMPORTANT
+        w.style.top = "auto";
+        w.style.right = "auto";
+        w.style.transform = "none";
         header.appendChild(w);
-        // ❌ REMOVE THIS: w.appendChild(m);
-        // ✅ ADD THIS: Always append menu to body
-        document.body.appendChild(m);
       } else {
         placeFixed(w, settings);
         document.body.appendChild(w);
@@ -286,20 +289,24 @@
 
     w.onclick = (e) => {
       e.stopPropagation();
-      const isOpen = m.style.display === "block";
-      m.style.display = isOpen ? "none" : "block";
+      m.style.display = "block";
 
-      if (!isOpen) {
-        const r = w.getBoundingClientRect();
-        const openUp = r.bottom + 220 > window.innerHeight;
-
-        m.style.position = "fixed";
-        m.style.left = r.left + "px";
-        m.style.top = openUp ? "auto" : r.bottom + 6 + "px";
-        m.style.bottom = openUp
-          ? window.innerHeight - r.top + 6 + "px"
-          : "auto";
+      if (settings.placement === "inline") {
+        m.style.position = "absolute";
+        m.style.top = "100%";
+        m.style.left = "0";
+        w.appendChild(m);
+        return;
       }
+
+      const r = w.getBoundingClientRect();
+      const openUp = r.bottom + 220 > window.innerHeight;
+
+      m.style.position = "fixed";
+      m.style.left = r.left + "px";
+      m.style.top = openUp ? "auto" : r.bottom + 6 + "px";
+      m.style.bottom = openUp ? window.innerHeight - r.top + 6 + "px" : "auto";
+      document.body.appendChild(m);
     };
 
     m.addEventListener("click", (e) => e.stopPropagation());
@@ -307,6 +314,7 @@
     document.addEventListener("click", () => {
       if (m.parentNode) {
         m.style.display = "none";
+        m.remove();
       }
     });
 
