@@ -21,9 +21,9 @@
 
   const FALLBACK_SETTINGS = {
     selectedCurrencies: ["USD", "EUR", "INR"],
-    defaultCurrency: "INR",
+    defaultCurrency: "USD",
     baseCurrency: "USD",
-    placement: "fixed", // fixed | inline | hidden
+    placement: "fixed",
     fixedCorner: "bottom-right",
     distanceTop: 16,
     distanceRight: 16,
@@ -62,7 +62,6 @@
     }
   }
 
-  /* ================= HELPERS ================= */
   function findHeader() {
     for (const sel of HEADER_SELECTORS) {
       const el = document.querySelector(sel);
@@ -71,12 +70,13 @@
     return null;
   }
 
+  /* ================= HELPERS ================= */
   function detectCurrency() {
     try {
-      const l = navigator.language.toLowerCase();
-      if (l.includes("in")) return "INR";
-      if (l.includes("gb")) return "GBP";
-      if (l.includes("eu")) return "EUR";
+      const lang = navigator.language.toLowerCase();
+      if (lang.includes("in")) return "INR";
+      if (lang.includes("gb")) return "GBP";
+      if (lang.includes("eu")) return "EUR";
       return "USD";
     } catch {
       return "USD";
@@ -88,20 +88,33 @@
     return isNaN(n) ? null : n;
   }
 
-  function formatAmount(v, c) {
+  function formatAmount(val, cur) {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
-      currency: c,
+      currency: cur,
       maximumFractionDigits: 2,
-    }).format(v);
+    }).format(val);
   }
 
   function findPriceNodes() {
     const set = new Set();
     PRICE_SELECTORS.forEach((q) =>
-      document.querySelectorAll(q).forEach((el) => set.add(el))
+      document.querySelectorAll(q).forEach((el) => set.add(el)),
     );
     return [...set];
+  }
+
+  function followHeader(widget, header) {
+    function update() {
+      const r = header.getBoundingClientRect();
+      widget.style.position = "fixed";
+      widget.style.top = r.top + r.height / 2 + "px";
+      widget.style.right = "16px";
+      widget.style.transform = "translateY(-50%)";
+    }
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
   }
 
   /* ================= API ================= */
@@ -112,7 +125,7 @@
 
     try {
       const r = await fetch(
-        `${API_HOST}/api/rates?base=${base}&symbols=${target}`
+        `${API_HOST}/api/rates?base=${base}&symbols=${target}`,
       );
       const j = await r.json();
       if (j?.rates?.[target]) {
@@ -120,13 +133,14 @@
         return j.rates[target];
       }
     } catch {}
+
     return null;
   }
 
   async function loadSettings() {
     try {
       const r = await fetch(
-        `${API_HOST}/api/storefront-settings?shop=${encodeURIComponent(SHOP)}`
+        `${API_HOST}/api/storefront-settings?shop=${encodeURIComponent(SHOP)}`,
       );
       const j = await r.json();
       return j?.settings || FALLBACK_SETTINGS;
@@ -151,8 +165,10 @@
 
     findPriceNodes().forEach((el) => {
       if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-      const v = parseAmount(el.dataset.orig);
-      if (v !== null) el.textContent = formatAmount(v * rate, cur);
+      const val = parseAmount(el.dataset.orig);
+      if (val !== null) {
+        el.textContent = formatAmount(val * rate, cur);
+      }
     });
   }
 
@@ -160,10 +176,11 @@
   function injectCSS() {
     if (document.getElementById("__mlv_css")) return;
 
-    const s = document.createElement("style");
-    s.id = "__mlv_css";
-    s.textContent = `
+    const style = document.createElement("style");
+    style.id = "__mlv_css";
+    style.textContent = `
 #${PICK} {
+  position: fixed;
   z-index: 2147483647;
   background: #fff;
   border: 1px solid #ccc;
@@ -172,30 +189,54 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  display: inline-flex;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 #${MENU} {
+  position: fixed;
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   display: none;
+  z-index: 2147483646;
 }
 
 #${MENU} div {
   padding: 10px 16px;
   cursor: pointer;
 }
-#${MENU} div:hover { background: #f2f2f2; }
+
+#${MENU} div:hover {
+  background: #f2f2f2;
+}
 `;
-    document.head.appendChild(s);
+    document.head.appendChild(style);
   }
 
-  /* ================= WIDGET ================= */
+  function placeFixed(el, s) {
+    el.style.position = "fixed";
+    el.style.top = "";
+    el.style.bottom = "";
+    el.style.left = "";
+    el.style.right = "";
+
+    if (s.fixedCorner?.includes("top")) {
+      el.style.top = (s.distanceTop ?? 16) + "px";
+    } else {
+      el.style.bottom = (s.distanceBottom ?? 16) + "px";
+    }
+
+    if (s.fixedCorner?.includes("right")) {
+      el.style.right = (s.distanceRight ?? 16) + "px";
+    } else {
+      el.style.left = (s.distanceLeft ?? 16) + "px";
+    }
+  }
+
   function createWidget(settings) {
     document.getElementById(PICK)?.remove();
     document.getElementById(MENU)?.remove();
@@ -212,19 +253,6 @@
     const m = document.createElement("div");
     m.id = MENU;
 
-    let menuOpen = false;
-
-    function closeMenu() {
-      if (!menuOpen) return;
-      menuOpen = false;
-      m.style.display = "none";
-      m.remove();
-    }
-
-    document.addEventListener("pointerdown", (e) => {
-      if (!w.contains(e.target)) closeMenu();
-    });
-
     settings.selectedCurrencies.forEach((c) => {
       const item = document.createElement("div");
       item.textContent = c;
@@ -232,55 +260,54 @@
         e.stopPropagation();
         localStorage.setItem(KEY, c);
         w.children[0].textContent = c;
-        closeMenu();
+        m.style.display = "none"; // keep, but
+        // remove this: m.remove();
         await convertPrices(c, settings);
       };
+
       m.appendChild(item);
     });
 
-    /* ---------- PLACEMENT ---------- */
     if (settings.placement === "inline") {
       const header = findHeader();
       if (header) {
-        w.style.position = "absolute";
-        w.style.right = "16px";
-        w.style.top = "50%";
-        w.style.transform = "translateY(-50%)";
-        header.style.position ||= "relative";
         header.appendChild(w);
+        // ❌ REMOVE THIS: w.appendChild(m);
+        // ✅ ADD THIS: Always append menu to body
+        document.body.appendChild(m);
+      } else {
+        placeFixed(w, settings);
+        document.body.appendChild(w);
       }
     } else {
-      w.style.position = "fixed";
-      w.style.bottom = (settings.distanceBottom ?? 16) + "px";
-      w.style.right = (settings.distanceRight ?? 16) + "px";
+      placeFixed(w, settings);
       document.body.appendChild(w);
     }
 
-    /* ---------- MENU TOGGLE ---------- */
-    w.addEventListener("pointerdown", (e) => {
+    w.onclick = (e) => {
       e.stopPropagation();
+      const isOpen = m.style.display === "block";
+      m.style.display = isOpen ? "none" : "block";
 
-      if (menuOpen) {
-        closeMenu();
-        return;
+      if (!isOpen) {
+        const r = w.getBoundingClientRect();
+        const openUp = r.bottom + 220 > window.innerHeight;
+
+        m.style.position = "fixed";
+        m.style.left = r.left + "px";
+        m.style.top = openUp ? "auto" : r.bottom + 6 + "px";
+        m.style.bottom = openUp
+          ? window.innerHeight - r.top + 6 + "px"
+          : "auto";
       }
+    };
 
-      menuOpen = true;
-      m.style.display = "block";
+    m.addEventListener("click", (e) => e.stopPropagation());
 
-      if (settings.placement === "inline") {
-        m.style.position = "absolute";
-        m.style.top = "100%";
-        m.style.left = "0";
-        w.appendChild(m);
-        return;
+    document.addEventListener("click", () => {
+      if (m.parentNode) {
+        m.style.display = "none";
       }
-
-      const r = w.getBoundingClientRect();
-      m.style.position = "fixed";
-      m.style.left = r.left + "px";
-      m.style.top = r.bottom + 6 + "px";
-      document.body.appendChild(m);
     });
 
     convertPrices(saved, settings);
