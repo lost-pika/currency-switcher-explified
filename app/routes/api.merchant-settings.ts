@@ -57,37 +57,32 @@ export async function action({ request }) {
     distanceLeft,
   } = body;
 
-  // ✅ NORMALIZE FIXED CORNER (CRITICAL FIX)
-  const safeFixedCorner =
-    placement === "fixed" ? fixedCorner ?? "bottom-right" : "bottom-right";
+  // ✅ Build data conditionally
+  const data = {
+    selectedCurrencies: currencies,
+    defaultCurrency,
+    baseCurrency,
+    placement,
+  };
+
+  if (placement === "fixed") {
+    data.fixedCorner = fixedCorner;
+    data.distanceTop = distanceTop;
+    data.distanceRight = distanceRight;
+    data.distanceBottom = distanceBottom;
+    data.distanceLeft = distanceLeft;
+  }
 
   await prisma.merchantSettings.upsert({
     where: { shop },
-    update: {
-      selectedCurrencies: currencies,
-      defaultCurrency,
-      baseCurrency,
-      placement,
-      fixedCorner: safeFixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
-    },
+    update: data,
     create: {
       shop,
-      selectedCurrencies: currencies,
-      defaultCurrency,
-      baseCurrency,
-      placement,
-      fixedCorner: safeFixedCorner,
-      distanceTop,
-      distanceRight,
-      distanceBottom,
-      distanceLeft,
+      ...data,
     },
   });
 
   return new Response(null, { status: 204 });
 }
+
 
