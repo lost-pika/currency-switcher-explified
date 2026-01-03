@@ -20,10 +20,10 @@
   ];
 
   const FALLBACK_SETTINGS = {
-    selectedCurrencies: ["USD", "EUR", "INR", "AUD"],
-    defaultCurrency: "INR",
+    selectedCurrencies: ["USD", "EUR", "INR"],
+    defaultCurrency: "USD",
     baseCurrency: "USD",
-    placement: "Fixed Position",
+    placement: "fixed",
     fixedCorner: "bottom-right",
     distanceTop: 16,
     distanceRight: 16,
@@ -104,6 +104,19 @@
     return [...set];
   }
 
+  function followHeader(widget, header) {
+    function update() {
+      const r = header.getBoundingClientRect();
+      widget.style.position = "fixed";
+      widget.style.top = r.top + r.height / 2 + "px";
+      widget.style.right = "16px";
+      widget.style.transform = "translateY(-50%)";
+    }
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+  }
+
   /* ================= API ================= */
   async function fetchRates(base, target) {
     const key = `mlv_rate_${base}_${target}`;
@@ -140,12 +153,9 @@
   async function convertPrices(cur, settings) {
     const base = settings.baseCurrency;
 
-    // ✅ RESTORE ORIGINAL PRICES WHEN BASE CURRENCY
     if (cur === base) {
       findPriceNodes().forEach((el) => {
-        if (el.dataset.orig) {
-          el.textContent = el.dataset.orig;
-        }
+        if (el.dataset.orig) el.textContent = el.dataset.orig;
       });
       return;
     }
@@ -207,45 +217,12 @@
     document.head.appendChild(style);
   }
 
-  function place(el, s) {
-    // RESET
-    el.style.position = "";
+  function placeFixed(el, s) {
+    el.style.position = "fixed";
     el.style.top = "";
     el.style.bottom = "";
     el.style.left = "";
     el.style.right = "";
-
-    /* ---------- HIDDEN ---------- */
-    if (s.placement === "hidden") {
-      el.style.display = "none";
-      return;
-    }
-
-    /* ---------- INLINE ---------- */
-    if (s.placement === "inline") {
-      const header =
-        document.querySelector("header") ||
-        document.querySelector(".site-header") ||
-        document.querySelector("#shopify-section-header");
-
-      if (!header) {
-        // fallback to fixed if header not found
-        el.style.position = "fixed";
-        el.style.bottom = "16px";
-        el.style.right = "16px";
-        return;
-      }
-
-      header.style.position ||= "relative";
-      el.style.position = "absolute";
-      el.style.top = "50%";
-      el.style.right = "16px";
-      el.style.transform = "translateY(-50%)";
-      return;
-    }
-
-    /* ---------- FIXED ---------- */
-    el.style.position = "fixed";
 
     if (s.fixedCorner?.includes("top")) {
       el.style.top = (s.distanceTop ?? 16) + "px";
@@ -279,40 +256,31 @@
     settings.selectedCurrencies.forEach((c) => {
       const item = document.createElement("div");
       item.textContent = c;
-      item.onclick = async () => {
+      item.onclick = async (e) => {
+        e.stopPropagation();
         localStorage.setItem(KEY, c);
         w.children[0].textContent = c;
         m.style.display = "none";
+        m.remove();
         await convertPrices(c, settings);
       };
       m.appendChild(item);
     });
 
-    /* ---------- INLINE ---------- */
     if (settings.placement === "inline") {
       const header = findHeader();
-
-      if (!header) {
-        // fallback → fixed
-        settings.placement = "fixed";
-      } else {
-        header.style.position ||= "relative";
-        w.style.position = "absolute";
-        w.style.right = "16px";
-        w.style.top = "50%";
-        w.style.transform = "translateY(-50%)";
-
+      if (header) {
         header.appendChild(w);
+        followHeader(w, header);
+      } else {
+        placeFixed(w, settings);
+        document.body.appendChild(w);
       }
-    }
-
-    /* ---------- FIXED ---------- */
-    if (settings.placement === "fixed") {
-      place(w, settings);
+    } else {
+      placeFixed(w, settings);
       document.body.appendChild(w);
     }
 
-    /* ---------- MENU ---------- */
     w.onclick = (e) => {
       e.stopPropagation();
       m.style.display = "block";
@@ -332,11 +300,17 @@
       m.style.left = r.left + "px";
       m.style.top = openUp ? "auto" : r.bottom + 6 + "px";
       m.style.bottom = openUp ? window.innerHeight - r.top + 6 + "px" : "auto";
-
       document.body.appendChild(m);
     };
 
-    document.addEventListener("click", () => (m.style.display = "none"));
+    m.addEventListener("click", (e) => e.stopPropagation());
+
+    document.addEventListener("click", () => {
+      if (m.parentNode) {
+        m.style.display = "none";
+        m.remove();
+      }
+    });
 
     convertPrices(saved, settings);
   }
