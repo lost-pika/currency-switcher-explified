@@ -23,7 +23,7 @@
     selectedCurrencies: ["USD", "EUR", "INR"],
     defaultCurrency: "USD",
     baseCurrency: "USD",
-    placement: "fixed", // "inline" | "fixed" | "hidden"
+    placement: "fixed", // inline | fixed | hidden
     fixedCorner: "bottom-right",
     distanceTop: 16,
     distanceRight: 16,
@@ -39,10 +39,10 @@
   const HEADER_SELECTORS = [
     ".header__icons",
     ".header__inline-menu",
+    "#shopify-section-header header",
     "header",
     ".header",
     ".site-header",
-    "#shopify-section-header",
   ];
 
   /* ================= STORAGE ================= */
@@ -67,7 +67,7 @@
   function findHeader() {
     for (const sel of HEADER_SELECTORS) {
       const el = document.querySelector(sel);
-      if (el) return el;
+      if (el && el.offsetParent !== null) return el;
     }
     return null;
   }
@@ -192,16 +192,13 @@
   display: none;
   z-index: 2147483646;
 }
-
 #${MENU} div {
   padding: 10px 16px;
   cursor: pointer;
 }
-
 #${MENU} div:hover {
   background: #f2f2f2;
-}
-`;
+}`;
     document.head.appendChild(style);
   }
 
@@ -224,6 +221,8 @@
       el.style.left = (s.distanceLeft ?? 16) + "px";
     }
   }
+
+  let docClickBound = false;
 
   function createWidget(settings) {
     document.getElementById(PICK)?.remove();
@@ -256,7 +255,6 @@
       m.appendChild(item);
     });
 
-    /* ----- placement ----- */
     if (settings.placement === "inline") {
       const header = findHeader();
       if (header) {
@@ -272,7 +270,6 @@
       document.body.appendChild(w);
     }
 
-    /* ----- menu ----- */
     w.onclick = (e) => {
       e.stopPropagation();
       m.style.display = "block";
@@ -286,24 +283,23 @@
       }
 
       const r = w.getBoundingClientRect();
-      const openUp = r.bottom + 220 > window.innerHeight;
-
       m.style.position = "fixed";
       m.style.left = r.left + "px";
-      m.style.top = openUp ? "auto" : r.bottom + 6 + "px";
-      m.style.bottom = openUp ? window.innerHeight - r.top + 6 + "px" : "auto";
+      m.style.top = r.bottom + 6 + "px";
       document.body.appendChild(m);
     };
 
-    document.addEventListener("click", () => {
-      m.style.display = "none";
-      m.remove();
-    });
+    if (!docClickBound) {
+      document.addEventListener("click", () => {
+        m.style.display = "none";
+        m.remove();
+      });
+      docClickBound = true;
+    }
 
     convertPrices(saved, settings);
   }
 
-  /* ================= INIT ================= */
   async function init() {
     injectCSS();
     const settings = await loadSettings();
