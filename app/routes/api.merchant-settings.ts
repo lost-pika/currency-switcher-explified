@@ -38,9 +38,7 @@ export async function action({ request }) {
   try {
     ({ session } = await authenticate.admin(request));
   } catch (err) {
-    if (err instanceof Response) {
-      return err;
-    }
+    if (err instanceof Response) return err;
     throw err;
   }
 
@@ -59,6 +57,10 @@ export async function action({ request }) {
     distanceLeft,
   } = body;
 
+  // ✅ NORMALIZE FIXED CORNER (CRITICAL FIX)
+  const safeFixedCorner =
+    placement === "fixed" ? fixedCorner ?? "bottom-right" : "bottom-right";
+
   await prisma.merchantSettings.upsert({
     where: { shop },
     update: {
@@ -66,7 +68,7 @@ export async function action({ request }) {
       defaultCurrency,
       baseCurrency,
       placement,
-      fixedCorner,
+      fixedCorner: safeFixedCorner,
       distanceTop,
       distanceRight,
       distanceBottom,
@@ -78,7 +80,7 @@ export async function action({ request }) {
       defaultCurrency,
       baseCurrency,
       placement,
-      fixedCorner,
+      fixedCorner: safeFixedCorner,
       distanceTop,
       distanceRight,
       distanceBottom,
@@ -88,3 +90,4 @@ export async function action({ request }) {
 
   return new Response(null, { status: 204 });
 }
+
