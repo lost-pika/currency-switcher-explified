@@ -262,7 +262,7 @@
       if (header) {
         w.style.position = "relative";
         w.style.marginLeft = "12px";
-         w.style.transform = "translateY(-10px)"; // 👈 move up
+        w.style.transform = "translateY(-60px)"; // 👈 move up
         header.appendChild(w);
       } else {
         placeFixed(w, settings);

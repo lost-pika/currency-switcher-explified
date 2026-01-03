@@ -617,32 +617,106 @@ function PlacementSelector({
 /* -------------------------------------------------
    STEP 3: Confirmation
 ------------------------------------------------- */
+// function ConfirmationScreen({ onReview }) {
+//   return (
+//     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans flex justify-center items-center h-screen flex-col">
+//       <div className="bg-white rounded-xl p-12 text-center max-w-md shadow-2xl border border-gray-200">
+//         <div className="text-5xl mb-4">
+//           <span role="img" aria-label="Check Mark">
+//             ✅
+//           </span>
+//         </div>
+//         <h1 className="text-3xl font-bold text-gray-800 mb-2">
+//           Setup Complete!
+//         </h1>
+//         <p className="text-base text-gray-600 mt-4">
+//           Your Auto Currency Converter settings have been successfully
+//           configured and are now active on your store.
+//         </p>
+//         <button
+//           className="mt-8 px-6 py-3 rounded-lg border border-teal-500 bg-teal-500 text-white text-sm font-semibold cursor-pointer hover:bg-teal-600 transition-colors shadow-lg"
+//           onClick={onReview}
+//         >
+//           Review Settings
+//         </button>
+//       </div>
+//     </div>
+//   );
+// }
+
 function ConfirmationScreen({ onReview }) {
+  const shop = window.Shopify?.shop;
+  const themeEditorUrl = shop
+    ? `https://admin.shopify.com/store/${shop}/themes/current/editor?context=apps`
+    : "https://admin.shopify.com/themes";
+
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans flex justify-center items-center h-screen flex-col">
-      <div className="bg-white rounded-xl p-12 text-center max-w-md shadow-2xl border border-gray-200">
-        <div className="text-5xl mb-4">
-          <span role="img" aria-label="Check Mark">
-            ✅
-          </span>
+    <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans flex justify-center items-center">
+      <div className="bg-white rounded-xl p-8 max-w-xl w-full shadow-2xl border border-gray-200">
+        {/* Success */}
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-4">✅</div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Setup Complete
+          </h1>
+          <p className="text-sm text-gray-600 mt-2">
+            Your currency settings are saved. One final step is required to
+            display the currency switcher on your storefront.
+          </p>
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Setup Complete!
-        </h1>
-        <p className="text-base text-gray-600 mt-4">
-          Your Auto Currency Converter settings have been successfully
-          configured and are now active on your store.
-        </p>
-        <button
-          className="mt-8 px-6 py-3 rounded-lg border border-teal-500 bg-teal-500 text-white text-sm font-semibold cursor-pointer hover:bg-teal-600 transition-colors shadow-lg"
-          onClick={onReview}
-        >
-          Review Settings
-        </button>
+
+        {/* Onboarding Instructions (THIS IS WHAT SHOPIFY WANTS) */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">
+            Enable Currency Switcher in Your Theme
+          </h2>
+
+          <ol className="list-decimal list-inside text-sm text-gray-700 space-y-2">
+            <li>Click <strong>Open Theme Editor</strong> below.</li>
+            <li>
+              In the left sidebar, open <strong>App embeds</strong>.
+            </li>
+            <li>
+              Enable <strong>Currency Switcher – App Embed</strong>.
+            </li>
+            <li>
+              Click <strong>Save</strong> in the theme editor.
+            </li>
+            <li>
+              Visit your storefront to preview the currency switcher.
+            </li>
+          </ol>
+
+          <p className="text-xs text-gray-500 mt-3">
+            If your theme supports app blocks, you can also add the
+            <strong> Currency Switcher App Block</strong> to specific sections
+            using the theme editor.
+          </p>
+        </div>
+
+        {/* Deep Link Button */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <a
+            href={themeEditorUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-center px-5 py-3 rounded-lg bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 transition-colors"
+          >
+            Open Theme Editor
+          </a>
+
+          <button
+            onClick={onReview}
+            className="flex-1 px-5 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-100"
+          >
+            Review Settings
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
 
 /* -------------------------------------------------
    MAIN ROUTE
