@@ -192,6 +192,7 @@
   display: none;
   z-index: 2147483646;
 }
+
 #${MENU} div {
   padding: 10px 16px;
   cursor: pointer;
@@ -255,11 +256,13 @@
       m.appendChild(item);
     });
 
+    /* ----- placement ----- */
     if (settings.placement === "inline") {
       const header = findHeader();
       if (header) {
         w.style.position = "relative";
         w.style.marginLeft = "12px";
+         w.style.transform = "translateY(-10px)"; // 👈 move up
         header.appendChild(w);
       } else {
         placeFixed(w, settings);
@@ -270,6 +273,7 @@
       document.body.appendChild(w);
     }
 
+    /* ----- menu open ----- */
     w.onclick = (e) => {
       e.stopPropagation();
       m.style.display = "block";
@@ -283,9 +287,23 @@
       }
 
       const r = w.getBoundingClientRect();
+      const menuHeight = m.offsetHeight || 220;
+      const spaceBelow = window.innerHeight - r.bottom;
+      const spaceAbove = r.top;
+
       m.style.position = "fixed";
       m.style.left = r.left + "px";
-      m.style.top = r.bottom + 6 + "px";
+
+      if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
+        // open UP
+        m.style.top = "auto";
+        m.style.bottom = window.innerHeight - r.top + 6 + "px";
+      } else {
+        // open DOWN
+        m.style.bottom = "auto";
+        m.style.top = r.bottom + 6 + "px";
+      }
+
       document.body.appendChild(m);
     };
 
@@ -300,6 +318,7 @@
     convertPrices(saved, settings);
   }
 
+  /* ================= INIT ================= */
   async function init() {
     injectCSS();
     const settings = await loadSettings();
