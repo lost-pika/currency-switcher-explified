@@ -123,20 +123,30 @@
 
   /* ================= CONVERSION ================= */
   async function convertPrices(cur, settings) {
-    const base = settings.baseCurrency;
-    if (cur === base) return;
+  const base = settings.baseCurrency;
 
-    const rate = await fetchRates(base, cur);
-    if (!rate) return;
-
+  // ✅ RESTORE ORIGINAL PRICES WHEN BASE CURRENCY
+  if (cur === base) {
     findPriceNodes().forEach((el) => {
-      if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-      const val = parseAmount(el.dataset.orig);
-      if (val !== null) {
-        el.textContent = formatAmount(val * rate, cur);
+      if (el.dataset.orig) {
+        el.textContent = el.dataset.orig;
       }
     });
+    return;
   }
+
+  const rate = await fetchRates(base, cur);
+  if (!rate) return;
+
+  findPriceNodes().forEach((el) => {
+    if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
+    const val = parseAmount(el.dataset.orig);
+    if (val !== null) {
+      el.textContent = formatAmount(val * rate, cur);
+    }
+  });
+}
+
 
   /* ================= UI ================= */
   function injectCSS() {
