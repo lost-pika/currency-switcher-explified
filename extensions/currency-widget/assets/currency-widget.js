@@ -36,6 +36,13 @@
     (window.Shopify && window.Shopify.shop) ||
     window.location.hostname;
 
+  const HEADER_SELECTORS = [
+    "header",
+    ".header",
+    ".site-header",
+    "#shopify-section-header",
+  ];
+
   /* ================= STORAGE ================= */
   const now = () => Date.now();
 
@@ -53,6 +60,14 @@
     } catch {
       return null;
     }
+  }
+
+  function findHeader() {
+    for (const sel of HEADER_SELECTORS) {
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+    return null;
   }
 
   /* ================= HELPERS ================= */
@@ -249,13 +264,14 @@
     document.getElementById(PICK)?.remove();
     document.getElementById(MENU)?.remove();
 
+    if (settings.placement === "hidden") return;
+
     const saved =
       localStorage.getItem(KEY) || settings.defaultCurrency || detectCurrency();
 
     const w = document.createElement("div");
     w.id = PICK;
     w.innerHTML = `<span>${saved}</span><span>▾</span>`;
-    place(w, settings);
 
     const m = document.createElement("div");
     m.id = MENU;
@@ -272,34 +288,55 @@
       m.appendChild(item);
     });
 
+    /* ---------- INLINE ---------- */
+    if (settings.placement === "inline") {
+      const header = findHeader();
+
+      if (!header) {
+        // fallback → fixed
+        settings.placement = "fixed";
+      } else {
+        header.style.position ||= "relative";
+        w.style.position = "absolute";
+        w.style.right = "16px";
+        w.style.top = "50%";
+        w.style.transform = "translateY(-50%)";
+
+        header.appendChild(w);
+      }
+    }
+
+    /* ---------- FIXED ---------- */
+    if (settings.placement === "fixed") {
+      place(w, settings);
+      document.body.appendChild(w);
+    }
+
+    /* ---------- MENU ---------- */
     w.onclick = (e) => {
       e.stopPropagation();
-
-      const r = w.getBoundingClientRect();
-      const openUp = r.bottom + 220 > window.innerHeight;
-
       m.style.display = "block";
 
       if (settings.placement === "inline") {
         m.style.position = "absolute";
+        m.style.top = "100%";
         m.style.left = "0";
-        m.style.top = openUp ? "auto" : "100%";
-        m.style.bottom = openUp ? "100%" : "auto";
         w.appendChild(m);
         return;
       }
 
-      // fixed placement
+      const r = w.getBoundingClientRect();
+      const openUp = r.bottom + 220 > window.innerHeight;
+
       m.style.position = "fixed";
       m.style.left = r.left + "px";
       m.style.top = openUp ? "auto" : r.bottom + 6 + "px";
       m.style.bottom = openUp ? window.innerHeight - r.top + 6 + "px" : "auto";
+
+      document.body.appendChild(m);
     };
 
     document.addEventListener("click", () => (m.style.display = "none"));
-
-    document.body.appendChild(w);
-    document.body.appendChild(m);
 
     convertPrices(saved, settings);
   }
