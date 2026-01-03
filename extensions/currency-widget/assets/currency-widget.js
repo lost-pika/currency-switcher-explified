@@ -38,6 +38,7 @@
     window.location.hostname;
 
   let cachedDBSettings = null;
+  let themeSettingsActive = false;
 
   /* ================= UTILS ================= */
   const now = () => Date.now();
@@ -194,11 +195,7 @@
             : FALLBACK_SETTINGS.distanceLeft,
       };
 
-      cachedDBSettings = {
-        selectedCurrencies: result.selectedCurrencies,
-        defaultCurrency: result.defaultCurrency,
-        baseCurrency: result.baseCurrency,
-      };
+      cachedDBSettings = result;
 
       return result;
     } catch (err) {
@@ -307,38 +304,10 @@
 
     // Merge: DB settings + theme editor settings
     const themeSettings = window.__MLV_THEME_SETTINGS__ || {};
-    const mergedSettings = {
-      ...st,
-      placement:
-        themeSettings.placement !== undefined
-          ? themeSettings.placement
-          : st?.placement,
 
-      fixedCorner:
-        themeSettings.fixedCorner !== undefined
-          ? themeSettings.fixedCorner
-          : st?.fixedCorner,
-
-      distanceTop:
-        themeSettings.distanceTop !== undefined
-          ? themeSettings.distanceTop
-          : st?.distanceTop,
-
-      distanceRight:
-        themeSettings.distanceRight !== undefined
-          ? themeSettings.distanceRight
-          : st?.distanceRight,
-
-      distanceBottom:
-        themeSettings.distanceBottom !== undefined
-          ? themeSettings.distanceBottom
-          : st?.distanceBottom,
-
-      distanceLeft:
-        themeSettings.distanceLeft !== undefined
-          ? themeSettings.distanceLeft
-          : st?.distanceLeft,
-    };
+    const mergedSettings = themeSettingsActive
+      ? { ...st, ...themeSettings } // Theme editor overrides DB
+      : st; // DB-only on initial load
 
     console.log("🔗 Merged settings (DB + Theme):", mergedSettings);
 
@@ -494,30 +463,21 @@
 
   // Listen for theme editor settings changes (real-time updates)
   window.addEventListener("mlv:theme:settings:update", async (e) => {
-    console.log("🎨 Theme settings updated, re-rendering...", e.detail);
-
-    // Use cached DB settings or fallback
-    const dbSettings = cachedDBSettings || {
-      selectedCurrencies: FALLBACK_SETTINGS.selectedCurrencies,
-      defaultCurrency: FALLBACK_SETTINGS.defaultCurrency,
-      baseCurrency: FALLBACK_SETTINGS.baseCurrency,
-    };
+    themeSettingsActive = true; // 👈 important
 
     const mergedSettings = {
-      ...dbSettings,
+      ...cachedDBSettings,
       ...e.detail,
     };
 
     const currentCurrency =
       localStorage.getItem(KEY) || mergedSettings.defaultCurrency;
 
-    // Re-create picker with new settings
     createPicker(mergedSettings, currentCurrency, async (c) => {
       localStorage.setItem(KEY, c);
       await runFor(c, mergedSettings);
     });
 
-    // Re-run currency conversion
     await runFor(currentCurrency, mergedSettings);
   });
 
