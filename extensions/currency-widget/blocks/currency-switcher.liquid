@@ -1,3 +1,5 @@
+<div id="mlv-widget-container--{{ block.id }}"></div>
+
 <script>
 (function () {
   var settings = {
@@ -26,3 +28,71 @@
   notify();
 })();
 </script>
+
+{% schema %}
+{
+  "name": "Currency Switcher",
+  "target": "section",
+  "settings": [
+    {
+      "type": "select",
+      "id": "placement",
+      "label": "Placement",
+      "default": "Fixed Position",
+      "options": [
+        { "value": "Fixed Position", "label": "Fixed position" },
+        { "value": "Inline with the header", "label": "Inline with header" },
+        { "value": "Don't show at all", "label": "Don't show" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "fixed_corner",
+      "label": "Fixed corner",
+      "default": "bottom-right",
+      "options": [
+        { "value": "top-left", "label": "Top left" },
+        { "value": "top-right", "label": "Top right" },
+        { "value": "bottom-left", "label": "Bottom left" },
+        { "value": "bottom-right", "label": "Bottom right" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "distance_top",
+      "label": "Distance from top",
+      "default": 16,
+      "min": 0,
+      "max": 200,
+      "step": 2
+    },
+    {
+      "type": "range",
+      "id": "distance_right",
+      "label": "Distance from right",
+      "default": 16,
+      "min": 0,
+      "max": 200,
+      "step": 2
+    },
+    {
+      "type": "range",
+      "id": "distance_bottom",
+      "label": "Distance from bottom",
+      "default": 16,
+      "min": 0,
+      "max": 200,
+      "step": 2
+    },
+    {
+      "type": "range",
+      "id": "distance_left",
+      "label": "Distance from left",
+      "default": 16,
+      "min": 0,
+      "max": 200,
+      "step": 2
+    }
+  ]
+}
+{% endschema %}
