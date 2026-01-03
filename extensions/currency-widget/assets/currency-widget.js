@@ -23,7 +23,7 @@
     selectedCurrencies: ["USD", "EUR", "INR"],
     defaultCurrency: "USD",
     baseCurrency: "USD",
-    placement: "fixed",
+    placement: "fixed", // "inline" | "fixed" | "hidden"
     fixedCorner: "bottom-right",
     distanceTop: 16,
     distanceRight: 16,
@@ -37,6 +37,8 @@
     window.location.hostname;
 
   const HEADER_SELECTORS = [
+    ".header__icons",
+    ".header__inline-menu",
     "header",
     ".header",
     ".site-header",
@@ -104,19 +106,6 @@
     return [...set];
   }
 
-  function followHeader(widget, header) {
-    function update() {
-      const r = header.getBoundingClientRect();
-      widget.style.position = "fixed";
-      widget.style.top = r.top + r.height / 2 + "px";
-      widget.style.right = "16px";
-      widget.style.transform = "translateY(-50%)";
-    }
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-  }
-
   /* ================= API ================= */
   async function fetchRates(base, target) {
     const key = `mlv_rate_${base}_${target}`;
@@ -180,7 +169,6 @@
     style.id = "__mlv_css";
     style.textContent = `
 #${PICK} {
-  position: fixed;
   z-index: 2147483647;
   background: #fff;
   border: 1px solid #ccc;
@@ -190,14 +178,13 @@
   font-weight: 500;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
-
 #${MENU} {
-  position: fixed;
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -206,12 +193,10 @@
   z-index: 2147483646;
 }
 
-
 #${MENU} div {
   padding: 10px 16px;
   cursor: pointer;
 }
-
 
 #${MENU} div:hover {
   background: #f2f2f2;
@@ -227,13 +212,13 @@
     el.style.left = "";
     el.style.right = "";
 
-    if (s.fixedCorner?.includes("top")) {
+    if (s.fixedCorner.includes("top")) {
       el.style.top = (s.distanceTop ?? 16) + "px";
     } else {
       el.style.bottom = (s.distanceBottom ?? 16) + "px";
     }
 
-    if (s.fixedCorner?.includes("right")) {
+    if (s.fixedCorner.includes("right")) {
       el.style.right = (s.distanceRight ?? 16) + "px";
     } else {
       el.style.left = (s.distanceLeft ?? 16) + "px";
@@ -243,11 +228,12 @@
   function createWidget(settings) {
     document.getElementById(PICK)?.remove();
     document.getElementById(MENU)?.remove();
-
     if (settings.placement === "hidden") return;
 
     const saved =
-      localStorage.getItem(KEY) || settings.defaultCurrency || detectCurrency();
+      localStorage.getItem(KEY) ||
+      settings.defaultCurrency ||
+      detectCurrency();
 
     const w = document.createElement("div");
     w.id = PICK;
@@ -270,13 +256,12 @@
       m.appendChild(item);
     });
 
+    /* ----- placement ----- */
     if (settings.placement === "inline") {
       const header = findHeader();
       if (header) {
-        w.style.position = "relative"; // IMPORTANT
-        w.style.top = "auto";
-        w.style.right = "auto";
-        w.style.transform = "none";
+        w.style.position = "relative";
+        w.style.marginLeft = "12px";
         header.appendChild(w);
       } else {
         placeFixed(w, settings);
@@ -287,6 +272,7 @@
       document.body.appendChild(w);
     }
 
+    /* ----- menu ----- */
     w.onclick = (e) => {
       e.stopPropagation();
       m.style.display = "block";
@@ -309,13 +295,9 @@
       document.body.appendChild(m);
     };
 
-    m.addEventListener("click", (e) => e.stopPropagation());
-
     document.addEventListener("click", () => {
-      if (m.parentNode) {
-        m.style.display = "none";
-        m.remove();
-      }
+      m.style.display = "none";
+      m.remove();
     });
 
     convertPrices(saved, settings);
