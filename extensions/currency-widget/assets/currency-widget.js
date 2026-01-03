@@ -84,7 +84,7 @@
   function findPriceNodes() {
     const set = new Set();
     PRICE_SELECTORS.forEach((q) =>
-      document.querySelectorAll(q).forEach((el) => set.add(el))
+      document.querySelectorAll(q).forEach((el) => set.add(el)),
     );
     return [...set];
   }
@@ -97,7 +97,7 @@
 
     try {
       const r = await fetch(
-        `${API_HOST}/api/rates?base=${base}&symbols=${target}`
+        `${API_HOST}/api/rates?base=${base}&symbols=${target}`,
       );
       const j = await r.json();
       if (j?.rates?.[target]) {
@@ -112,7 +112,7 @@
   async function loadSettings() {
     try {
       const r = await fetch(
-        `${API_HOST}/api/storefront-settings?shop=${encodeURIComponent(SHOP)}`
+        `${API_HOST}/api/storefront-settings?shop=${encodeURIComponent(SHOP)}`,
       );
       const j = await r.json();
       return j?.settings || FALLBACK_SETTINGS;
@@ -123,30 +123,29 @@
 
   /* ================= CONVERSION ================= */
   async function convertPrices(cur, settings) {
-  const base = settings.baseCurrency;
+    const base = settings.baseCurrency;
 
-  // ✅ RESTORE ORIGINAL PRICES WHEN BASE CURRENCY
-  if (cur === base) {
+    // ✅ RESTORE ORIGINAL PRICES WHEN BASE CURRENCY
+    if (cur === base) {
+      findPriceNodes().forEach((el) => {
+        if (el.dataset.orig) {
+          el.textContent = el.dataset.orig;
+        }
+      });
+      return;
+    }
+
+    const rate = await fetchRates(base, cur);
+    if (!rate) return;
+
     findPriceNodes().forEach((el) => {
-      if (el.dataset.orig) {
-        el.textContent = el.dataset.orig;
+      if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
+      const val = parseAmount(el.dataset.orig);
+      if (val !== null) {
+        el.textContent = formatAmount(val * rate, cur);
       }
     });
-    return;
   }
-
-  const rate = await fetchRates(base, cur);
-  if (!rate) return;
-
-  findPriceNodes().forEach((el) => {
-    if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-    const val = parseAmount(el.dataset.orig);
-    if (val !== null) {
-      el.textContent = formatAmount(val * rate, cur);
-    }
-  });
-}
-
 
   /* ================= UI ================= */
   function injectCSS() {
@@ -194,20 +193,55 @@
   }
 
   function place(el, s) {
-    if (s.fixedCorner.includes("top")) {
-      el.style.top = s.distanceTop + "px";
-      el.style.bottom = "auto";
-    } else {
-      el.style.bottom = s.distanceBottom + "px";
-      el.style.top = "auto";
+    // RESET
+    el.style.position = "";
+    el.style.top = "";
+    el.style.bottom = "";
+    el.style.left = "";
+    el.style.right = "";
+
+    /* ---------- HIDDEN ---------- */
+    if (s.placement === "hidden") {
+      el.style.display = "none";
+      return;
     }
 
-    if (s.fixedCorner.includes("right")) {
-      el.style.right = s.distanceRight + "px";
-      el.style.left = "auto";
+    /* ---------- INLINE ---------- */
+    if (s.placement === "inline") {
+      const header =
+        document.querySelector("header") ||
+        document.querySelector(".site-header") ||
+        document.querySelector("#shopify-section-header");
+
+      if (!header) {
+        // fallback to fixed if header not found
+        el.style.position = "fixed";
+        el.style.bottom = "16px";
+        el.style.right = "16px";
+        return;
+      }
+
+      header.style.position ||= "relative";
+      el.style.position = "absolute";
+      el.style.top = "50%";
+      el.style.right = "16px";
+      el.style.transform = "translateY(-50%)";
+      return;
+    }
+
+    /* ---------- FIXED ---------- */
+    el.style.position = "fixed";
+
+    if (s.fixedCorner?.includes("top")) {
+      el.style.top = (s.distanceTop ?? 16) + "px";
     } else {
-      el.style.left = s.distanceLeft + "px";
-      el.style.right = "auto";
+      el.style.bottom = (s.distanceBottom ?? 16) + "px";
+    }
+
+    if (s.fixedCorner?.includes("right")) {
+      el.style.right = (s.distanceRight ?? 16) + "px";
+    } else {
+      el.style.left = (s.distanceLeft ?? 16) + "px";
     }
   }
 
@@ -216,9 +250,7 @@
     document.getElementById(MENU)?.remove();
 
     const saved =
-      localStorage.getItem(KEY) ||
-      settings.defaultCurrency ||
-      detectCurrency();
+      localStorage.getItem(KEY) || settings.defaultCurrency || detectCurrency();
 
     const w = document.createElement("div");
     w.id = PICK;
@@ -242,15 +274,26 @@
 
     w.onclick = (e) => {
       e.stopPropagation();
+
       const r = w.getBoundingClientRect();
-      const openUp = r.bottom + 200 > window.innerHeight;
+      const openUp = r.bottom + 220 > window.innerHeight;
 
       m.style.display = "block";
+
+      if (settings.placement === "inline") {
+        m.style.position = "absolute";
+        m.style.left = "0";
+        m.style.top = openUp ? "auto" : "100%";
+        m.style.bottom = openUp ? "100%" : "auto";
+        w.appendChild(m);
+        return;
+      }
+
+      // fixed placement
+      m.style.position = "fixed";
       m.style.left = r.left + "px";
       m.style.top = openUp ? "auto" : r.bottom + 6 + "px";
-      m.style.bottom = openUp
-        ? window.innerHeight - r.top + 6 + "px"
-        : "auto";
+      m.style.bottom = openUp ? window.innerHeight - r.top + 6 + "px" : "auto";
     };
 
     document.addEventListener("click", () => (m.style.display = "none"));
