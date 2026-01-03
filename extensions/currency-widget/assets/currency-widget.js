@@ -1,8 +1,11 @@
 (function () {
   "use strict";
 
+  /* ================= CONFIG ================= */
   const API_HOST = "https://currency-switcher-explified.vercel.app";
   const PICK = "__mlv_currency_picker_v2";
+  const MENU = "__mlv_currency_menu_v2";
+  const KEY = "mlv_currency_choice_v2";
 
   const FALLBACK_SETTINGS = {
     selectedCurrencies: ["USD", "EUR", "INR"],
@@ -21,6 +24,8 @@
     (window.Shopify && window.Shopify.shop) ||
     window.location.hostname;
 
+  /* ================= API ================= */
+
   async function loadSettings() {
     try {
       const res = await fetch(
@@ -33,22 +38,35 @@
     }
   }
 
-  function createPicker(settings) {
-    const existing = document.getElementById(PICK);
-    if (existing) existing.remove();
+  /* ================= DOM ================= */
 
+  function createPicker(settings) {
+    // cleanup
+    document.getElementById(PICK)?.remove();
+    document.getElementById(MENU)?.remove();
+
+    const saved =
+      localStorage.getItem(KEY) || settings.defaultCurrency;
+
+    /* ---------- Picker Button ---------- */
     const w = document.createElement("div");
     w.id = PICK;
-    w.textContent = settings.defaultCurrency;
-    w.style.padding = "10px 14px";
-    w.style.background = "#fff";
-    w.style.border = "1px solid #ccc";
-    w.style.borderRadius = "8px";
-    w.style.cursor = "pointer";
-    w.style.zIndex = "2147483647";
-    w.style.position = "fixed";
+    w.textContent = saved;
+    Object.assign(w.style, {
+      padding: "10px 32px 10px 14px",
+      background: "#fff",
+      border: "1px solid #ccc",
+      borderRadius: "8px",
+      cursor: "pointer",
+      zIndex: 2147483647,
+      position: "fixed",
+      fontFamily: "system-ui, sans-serif",
+      fontWeight: "500",
+      fontSize: "14px",
+      boxShadow: "0 2px 8px rgba(0,0,0,.12)",
+    });
 
-    // ✅ PLACEMENT FROM DB ONLY
+    /* ---------- Placement (DB ONLY) ---------- */
     if (
       settings.fixedCorner === "top-left" ||
       settings.fixedCorner === "top-right"
@@ -67,8 +85,64 @@
       w.style.left = settings.distanceLeft + "px";
     }
 
+    /* ---------- Dropdown Menu ---------- */
+    const m = document.createElement("div");
+    m.id = MENU;
+    Object.assign(m.style, {
+      position: "fixed",
+      background: "#fff",
+      border: "1px solid #ddd",
+      borderRadius: "6px",
+      boxShadow: "0 8px 24px rgba(0,0,0,.15)",
+      display: "none",
+      zIndex: 2147483646,
+      minWidth: "140px",
+      fontFamily: "system-ui, sans-serif",
+    });
+
+    settings.selectedCurrencies.forEach((cur) => {
+      const item = document.createElement("div");
+      item.textContent = cur;
+      Object.assign(item.style, {
+        padding: "10px 14px",
+        cursor: "pointer",
+        borderBottom: "1px solid #eee",
+      });
+
+      item.onmouseenter = () =>
+        (item.style.background = "#f2f2f2");
+      item.onmouseleave = () =>
+        (item.style.background = "#fff");
+
+      item.onclick = (e) => {
+        e.stopPropagation();
+        localStorage.setItem(KEY, cur);
+        w.textContent = cur;
+        m.style.display = "none";
+      };
+
+      m.appendChild(item);
+    });
+
+    /* ---------- Toggle Logic ---------- */
+    w.onclick = (e) => {
+      e.stopPropagation();
+      const r = w.getBoundingClientRect();
+      m.style.left = r.left + "px";
+      m.style.top = r.bottom + 6 + "px";
+      m.style.display =
+        m.style.display === "block" ? "none" : "block";
+    };
+
+    document.addEventListener("click", () => {
+      m.style.display = "none";
+    });
+
     document.body.appendChild(w);
+    document.body.appendChild(m);
   }
+
+  /* ================= INIT ================= */
 
   async function init() {
     const settings = await loadSettings();
