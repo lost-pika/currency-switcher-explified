@@ -1,50 +1,45 @@
 import prisma from "../db.server";
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
-  const shop = url.searchParams.get("shop");
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 
-  if (!shop) {
-    return new Response(
-      JSON.stringify({ ok: false, error: "Missing shop" }),
-      {
-        status: 400,
-        headers: corsHeaders(request),
-      }
-    );
+export async function loader({ request }) {
+  // Handle preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
 
-  const record = await prisma.shopSettings.findUnique({
-    where: { shop },
-  });
+  try {
+    const url = new URL(request.url);
+    const shop = url.searchParams.get("shop");
 
-  return new Response(
-    JSON.stringify({
-      ok: true,
-      settings: record || null,
-    }),
-    {
-      status: 200,
-      headers: corsHeaders(request),
+    if (!shop) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Missing shop" }),
+        { status: 400, headers: corsHeaders }
+      );
     }
-  );
-}
 
-/* ✅ CORS helper */
-function corsHeaders(request) {
-  const origin = request.headers.get("origin") || "*";
+    const settings = await prisma.merchantSettings.findUnique({
+      where: { shop },
+    });
 
-  return {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
-}
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        settings: settings ?? null,
+      }),
+      { status: 200, headers: corsHeaders }
+    );
+  } catch (err) {
+    console.error("Storefront settings error:", err);
 
-export async function options({ request }) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders(request),
-  });
+    return new Response(
+      JSON.stringify({ ok: false, error: "Internal server error" }),
+      { status: 500, headers: corsHeaders }
+    );
+  }
 }
