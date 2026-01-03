@@ -2,6 +2,10 @@
 
 <script>
 (function () {
+  if (!(window.Shopify && Shopify.designMode)) {
+    return;
+  }
+
   var settings = {
     placement: "{{ block.settings.placement }}",
     fixedCorner: "{{ block.settings.fixed_corner }}",
