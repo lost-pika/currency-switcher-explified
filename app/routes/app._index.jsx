@@ -656,9 +656,7 @@ function ConfirmationScreen({ onReview }) {
         {/* Success */}
         <div className="text-center mb-6">
           <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Setup Complete
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-800">Setup Complete</h1>
           <p className="text-sm text-gray-600 mt-2">
             Your currency settings are saved. One final step is required to
             display the currency switcher on your storefront.
@@ -672,19 +670,22 @@ function ConfirmationScreen({ onReview }) {
           </h2>
 
           <ol className="list-decimal list-inside text-sm text-gray-700 space-y-2">
-            <li>Click <strong>Open Theme Editor</strong> below.</li>
             <li>
-              In the left sidebar, open <strong>App embeds</strong>.
+              Click <strong>Open Theme Editor</strong> below.
+            </li>
+            <li>
+              Click <strong>Edit theme</strong>.
+            </li>
+            <li>
+              Open <strong>App embeds</strong> from the left sidebar.
             </li>
             <li>
               Enable <strong>Currency Switcher – App Embed</strong>.
             </li>
             <li>
-              Click <strong>Save</strong> in the theme editor.
+              Click <strong>Save</strong>.
             </li>
-            <li>
-              Visit your storefront to preview the currency switcher.
-            </li>
+            <li>Visit your storefront to preview the currency switcher.</li>
           </ol>
 
           <p className="text-xs text-gray-500 mt-3">
@@ -716,7 +717,6 @@ function ConfirmationScreen({ onReview }) {
     </div>
   );
 }
-
 
 /* -------------------------------------------------
    MAIN ROUTE
@@ -750,7 +750,6 @@ export default function SettingsRoute() {
           // no settings yet → use defaults
           throw new Error("Empty response");
         }
-
 
         const json = JSON.parse(text);
 
