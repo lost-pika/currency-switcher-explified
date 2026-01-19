@@ -644,12 +644,15 @@ function PlacementSelector({
 //   );
 // }
 
+// https://${shop}/admin/api/2024-10/themes/${mainTheme.id}/assets.json?asset[key]=config/settings_data.json
 
-function ConfirmationScreen({ onReview }) {
-  const shop = window.Shopify?.shop;
-  const themeEditorUrl = shop
-    ? `https://${shop}/admin/api/2024-10/themes/${mainTheme.id}/assets.json?asset[key]=config/settings_data.json`
-    : "https://admin.shopify.com/themes";
+function ConfirmationScreen({ onReview, themeStatus }) {
+   const { shop, mainThemeId, isEnabled } = themeStatus;
+
+  const themeEditorUrl =
+    shop && mainThemeId
+      ? `https://${shop}/admin/themes/${mainThemeId}/editor?context=apps`
+      : "https://admin.shopify.com/themes/current/editor?context=apps";
 
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gray-50 font-sans flex justify-center items-center">
@@ -729,6 +732,20 @@ export default function SettingsRoute() {
     defaultCurrency: "",
   });
   const [loading, setLoading] = useState(true);
+  const [themeStatus, setThemeStatus] = useState({
+  shop: "",
+  mainThemeId: null,
+  isEnabled: false,
+});
+
+useEffect(() => {
+  (async () => {
+    const res = await fetch("/api/embed-status");
+    const json = await res.json();
+    setThemeStatus(json);
+  })();
+}, []);
+
 
   // load settings
   useEffect(() => {
@@ -928,7 +945,7 @@ export default function SettingsRoute() {
   }
 
   if (step === 3) {
-    return <ConfirmationScreen onReview={() => setStep(1)} />;
+    return <ConfirmationScreen onReview={() => setStep(1)} themeStatus={themeStatus} />;
   }
 
   return null;
