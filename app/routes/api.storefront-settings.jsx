@@ -1,4 +1,4 @@
-import prisma from "../db.server";
+import { prisma } from "../db.server";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,10 +27,50 @@ export async function loader({ request }) {
       where: { shop },
     });
 
+    // ✅ DEFAULT SETTINGS (fallback)
+    const defaultSettings = {
+      selectedCurrencies: ["USD", "EUR", "INR"],
+      defaultCurrency: "USD",
+      baseCurrency: "USD",
+      placement: "fixed",
+      fixedCorner: "bottom-right",
+      distanceTop: 16,
+      distanceRight: 16,
+      distanceBottom: 16,
+      distanceLeft: 16,
+      inlineSide: "right", // ✅ ADD THIS
+    };
+
+    // ✅ IF SETTINGS EXIST, TRANSFORM & INCLUDE ALL FIELDS
+    const responseSettings = settings
+      ? {
+          selectedCurrencies:
+            settings.selectedCurrencies ||
+            defaultSettings.selectedCurrencies,
+          defaultCurrency:
+            settings.defaultCurrency || defaultSettings.defaultCurrency,
+          baseCurrency:
+            settings.baseCurrency || defaultSettings.baseCurrency,
+          placement: settings.placement || defaultSettings.placement,
+          fixedCorner:
+            settings.fixedCorner || defaultSettings.fixedCorner,
+          distanceTop:
+            settings.distanceTop ?? defaultSettings.distanceTop,
+          distanceRight:
+            settings.distanceRight ?? defaultSettings.distanceRight,
+          distanceBottom:
+            settings.distanceBottom ?? defaultSettings.distanceBottom,
+          distanceLeft:
+            settings.distanceLeft ?? defaultSettings.distanceLeft,
+          inlineSide:
+            settings.inlineSide || defaultSettings.inlineSide, // ✅ ADD THIS
+        }
+      : defaultSettings;
+
     return new Response(
       JSON.stringify({
         ok: true,
-        settings: settings ?? null,
+        settings: responseSettings, // ✅ Return transformed object
       }),
       { status: 200, headers: corsHeaders }
     );

@@ -103,7 +103,6 @@ function CurrencySelector({
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between gap-5 items-start md:items-end mb-8 px-2">
           <div className="flex flex-col">
-            
             <h1 className="text-3xl font-semibold text-gray-800">
               Auto Currency Converter
             </h1>
@@ -306,6 +305,7 @@ function PlacementSelector({
   initialDistanceRight = 16,
   initialDistanceBottom = 16,
   initialDistanceLeft = 16,
+  initialInlineSide = "right",
 }) {
   const [placement, setPlacement] = useState(initialPlacement);
   const [fixedCorner, setFixedCorner] = useState(initialFixedCorner);
@@ -314,6 +314,7 @@ function PlacementSelector({
   const [distanceBottom, setDistanceBottom] = useState(initialDistanceBottom);
   const [distanceLeft, setDistanceLeft] = useState(initialDistanceLeft);
   const [isSaving, setIsSaving] = useState(false);
+  const [inlineSide, setInlineSide] = useState("right");
 
   useEffect(() => setPlacement(initialPlacement), [initialPlacement]);
   useEffect(() => setFixedCorner(initialFixedCorner), [initialFixedCorner]);
@@ -328,6 +329,10 @@ function PlacementSelector({
   );
   useEffect(() => setDistanceLeft(initialDistanceLeft), [initialDistanceLeft]);
 
+  useEffect(() => {
+    setInlineSide(initialInlineSide);
+  }, [initialInlineSide]);
+
   const handleSave = async () => {
     try {
       setIsSaving(true);
@@ -338,6 +343,7 @@ function PlacementSelector({
         distanceRight,
         distanceBottom,
         distanceLeft,
+        inlineSide,
       });
     } catch (e) {
       console.error(e);
@@ -587,6 +593,32 @@ function PlacementSelector({
                 />
               </div>
             )}
+
+            {/* {placement === "Inline with the header" && (
+              <div className="mt-6 flex justify-center gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="inlineSide"
+                    value="left"
+                    checked={inlineSide === "left"}
+                    onChange={() => setInlineSide("left")}
+                  />
+                  <span>Left side</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="inlineSide"
+                    value="right"
+                    checked={inlineSide === "right"}
+                    onChange={() => setInlineSide("right")}
+                  />
+                  <span>Right side</span>
+                </label>
+              </div>
+            )} */}
           </section>
         </div>
 
@@ -644,7 +676,7 @@ function PlacementSelector({
 // https://${shop}/admin/api/2024-10/themes/${mainTheme.id}/assets.json?asset[key]=config/settings_data.json
 
 function ConfirmationScreen({ onReview, themeStatus }) {
-   const { shop, mainThemeId, isEnabled } = themeStatus;
+  const { shop, mainThemeId, isEnabled } = themeStatus;
 
   const themeEditorUrl =
     shop && mainThemeId
@@ -730,19 +762,18 @@ export default function SettingsRoute() {
   });
   const [loading, setLoading] = useState(true);
   const [themeStatus, setThemeStatus] = useState({
-  shop: "",
-  mainThemeId: null,
-  isEnabled: false,
-});
+    shop: "",
+    mainThemeId: null,
+    isEnabled: false,
+  });
 
-useEffect(() => {
-  (async () => {
-    const res = await fetch("/api/embed-status");
-    const json = await res.json();
-    setThemeStatus(json);
-  })();
-}, []);
-
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/embed-status");
+      const json = await res.json();
+      setThemeStatus(json);
+    })();
+  }, []);
 
   // load settings
   useEffect(() => {
@@ -774,6 +805,7 @@ useEffect(() => {
           currencies: data.selectedCurrencies ?? DEFAULT_SELECTED,
           defaultCurrency: data.defaultCurrency ?? "INR",
           placement: data.placement ?? "fixed",
+          inlineSide: data.inlineSide ?? "right",
           fixedCorner: data.fixedCorner ?? "bottom-right",
           distanceTop: data.distanceTop ?? 16,
           distanceRight: data.distanceRight ?? 16,
@@ -873,6 +905,7 @@ useEffect(() => {
         defaultCurrency: step1Data.defaultCurrency,
         baseCurrency: "USD",
         placement: normalizedPlacement,
+       inlineSide: normalizedPlacement === "inline" ? data.inlineSide : null,
         fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
         distanceTop: data.distanceTop,
         distanceRight: data.distanceRight,
@@ -925,6 +958,7 @@ useEffect(() => {
         onBack={() => setStep(1)}
         onSave={handleStep2Save}
         initialPlacement={normalizePlacementForUI(step1Data.placement)}
+        initialInlineSide={step1Data.inlineSide || "right"}
         initialFixedCorner={
           step1Data.fixedCorner ||
           (["top-left", "top-right", "bottom-left", "bottom-right"].includes(
@@ -942,7 +976,12 @@ useEffect(() => {
   }
 
   if (step === 3) {
-    return <ConfirmationScreen onReview={() => setStep(1)} themeStatus={themeStatus} />;
+    return (
+      <ConfirmationScreen
+        onReview={() => setStep(1)}
+        themeStatus={themeStatus}
+      />
+    );
   }
 
   return null;

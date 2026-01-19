@@ -23,12 +23,13 @@
     selectedCurrencies: ["USD", "EUR", "INR"],
     defaultCurrency: "USD",
     baseCurrency: "USD",
-    placement: "fixed", // inline | fixed | hidden
+    placement: "fixed",
     fixedCorner: "bottom-right",
     distanceTop: 16,
     distanceRight: 16,
     distanceBottom: 16,
     distanceLeft: 16,
+    inlineSide: "right",
   };
 
   const SHOP =
@@ -65,10 +66,39 @@
   }
 
   function findHeader() {
+    console.log(
+      "🔎 [findHeader] Starting search with selectors:",
+      HEADER_SELECTORS,
+    );
+
     for (const sel of HEADER_SELECTORS) {
       const el = document.querySelector(sel);
-      if (el && el.offsetParent !== null) return el;
+      console.log(
+        `🔎 [findHeader] Selector "${sel}":`,
+        el ? "FOUND" : "NOT FOUND",
+        el?.offsetParent !== null ? "(visible)" : "(hidden)",
+      );
+      if (el && el.offsetParent !== null) {
+        console.log(
+          "🔎 [findHeader] Returning header:",
+          el.tagName,
+          el.className,
+        );
+        return el;
+      }
     }
+
+    console.log(
+      "🔎 [findHeader] No header found! Checking all header-like elements...",
+    );
+    const allHeaders = document.querySelectorAll(
+      "header, nav, [role='banner']",
+    );
+    console.log("🔎 [findHeader] Found these elements:", allHeaders.length);
+    allHeaders.forEach((h, i) => {
+      console.log(`  [${i}]`, h.tagName, h.className, h.id);
+    });
+
     return null;
   }
 
@@ -128,12 +158,32 @@
 
   async function loadSettings() {
     try {
-      const r = await fetch(
-        `${API_HOST}/api/storefront-settings?shop=${encodeURIComponent(SHOP)}`,
-      );
+      const url = `${API_HOST}/api/storefront-settings?shop=${encodeURIComponent(
+        SHOP,
+      )}`;
+      console.log("🌐 [loadSettings] Fetching from:", url);
+
+      const r = await fetch(url);
       const j = await r.json();
-      return j?.settings || FALLBACK_SETTINGS;
-    } catch {
+
+      console.log(
+        "🌐 [loadSettings] Raw response:",
+        JSON.stringify(j, null, 2),
+      );
+
+      // ✅ WORKAROUND: Merge API response with defaults to fill missing fields
+      const result = {
+        ...FALLBACK_SETTINGS,
+        ...(j?.settings || {}),
+      };
+      console.log(
+        "🌐 [loadSettings] Merged result (with defaults):",
+        JSON.stringify(result, null, 2),
+      );
+
+      return result;
+    } catch (err) {
+      console.log("🌐 [loadSettings] Error:", err);
       return FALLBACK_SETTINGS;
     }
   }
@@ -238,10 +288,48 @@
 
   let docClickBound = false;
 
+  function attachMenuHandler(w, m) {
+    w.onclick = (e) => {
+      e.stopPropagation();
+      m.style.display = "block";
+
+      const r = w.getBoundingClientRect();
+      const menuHeight = m.offsetHeight || 220;
+
+      m.style.position = "fixed";
+      m.style.left = r.left + "px";
+
+      if (window.innerHeight - r.bottom < menuHeight && r.top > menuHeight) {
+        m.style.top = "auto";
+        m.style.bottom = window.innerHeight - r.top + 6 + "px";
+      } else {
+        m.style.bottom = "auto";
+        m.style.top = r.bottom + 6 + "px";
+      }
+
+      document.body.appendChild(m);
+    };
+
+    if (!docClickBound) {
+      document.addEventListener("click", () => {
+        m.style.display = "none";
+        m.remove();
+      });
+      docClickBound = true;
+    }
+  }
+
   function createWidget(settings) {
     document.getElementById(PICK)?.remove();
     document.getElementById(MENU)?.remove();
     if (settings.placement === "hidden") return;
+
+    console.log(
+      "🔍 [createWidget] Full settings:",
+      JSON.stringify(settings, null, 2),
+    );
+    console.log("🔍 [createWidget] placement:", settings.placement);
+    console.log("🔍 [createWidget] inlineSide:", settings.inlineSide);
 
     const saved =
       localStorage.getItem(KEY) || settings.defaultCurrency || detectCurrency();
@@ -267,94 +355,53 @@
       m.appendChild(item);
     });
 
-    /* ----- placement ----- */
+    /* ----- INLINE PLACEMENT ----- */
     if (settings.placement === "inline") {
+      console.log("📍 [INLINE] Entering inline placement logic");
       const header = findHeader();
+      console.log("📍 [INLINE] Found header?", !!header);
+
       if (header) {
+        // ✅ FIXED: Look for right column or icons container first
+        let target =
+          header.querySelector(".header__column--right") ||
+          header.querySelector(".header__icons") ||
+          header.querySelector(".header__actions") ||
+          header;
+
+        console.log(
+          "📍 [INLINE] Target element:",
+          target?.tagName,
+          target?.className,
+        );
+
         w.style.position = "relative";
-        w.style.marginLeft = "12px";
-        w.style.transform = "translateY(-60px)"; // 👈 move up
-        header.appendChild(w);
-      } else {
-        placeFixed(w, settings);
-        document.body.appendChild(w);
-      }
-    } else {
-      placeFixed(w, settings);
-      document.body.appendChild(w);
-    }
+        w.style.marginLeft = "10px";
 
-    /* ----- menu open ----- */
-    w.onclick = (e) => {
-      e.stopPropagation();
-      m.style.display = "block";
+        console.log("📍 [INLINE] inlineSide value:", settings.inlineSide);
 
-      if (settings.placement === "inline") {
-        const header = findHeader();
-
-        if (header) {
-          w.style.position = "relative";
-          w.style.transform = "translateY(-4px)";
-
-          // Create an inner flex container in the header
-          let container = header.querySelector("#__mlv_inline_container");
-          if (!container) {
-            container = document.createElement("div");
-            container.id = "__mlv_inline_container";
-            container.style.display = "flex";
-            container.style.alignItems = "center";
-            container.style.gap = "10px";
-
-            // Make header a flexbox if not already
-            header.style.display = "flex";
-            header.style.alignItems = "center";
-            header.style.justifyContent = "space-between";
-
-            header.appendChild(container);
-          }
-
-          // LEFT or RIGHT based on fixedCorner
-          if (settings.fixedCorner.includes("left")) {
-            container.style.order = "-1"; // left side
-            container.prepend(w);
-          } else {
-            container.style.order = "999"; // right side
-            container.appendChild(w);
-          }
+        // ACTUAL inline logic: use settings.inlineSide
+        if (settings.inlineSide === "left") {
+          console.log("📍 [INLINE] Using PREPEND (left)");
+          target.prepend(w);
         } else {
-          placeFixed(w, settings);
-          document.body.appendChild(w);
+          console.log("📍 [INLINE] Using APPEND (right)");
+          target.appendChild(w);
         }
+
+        attachMenuHandler(w, m);
+        convertPrices(saved, settings);
+        return;
       }
-
-      const r = w.getBoundingClientRect();
-      const menuHeight = m.offsetHeight || 220;
-      const spaceBelow = window.innerHeight - r.bottom;
-      const spaceAbove = r.top;
-
-      m.style.position = "fixed";
-      m.style.left = r.left + "px";
-
-      if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
-        // open UP
-        m.style.top = "auto";
-        m.style.bottom = window.innerHeight - r.top + 6 + "px";
-      } else {
-        // open DOWN
-        m.style.bottom = "auto";
-        m.style.top = r.bottom + 6 + "px";
-      }
-
-      document.body.appendChild(m);
-    };
-
-    if (!docClickBound) {
-      document.addEventListener("click", () => {
-        m.style.display = "none";
-        m.remove();
-      });
-      docClickBound = true;
     }
+
+    /* ----- FIXED FALLBACK ----- */
+    console.log("📍 [FIXED] Using fixed placement fallback");
+    placeFixed(w, settings);
+    document.body.appendChild(w);
+
+    /* ----- MENU HANDLER ----- */
+    attachMenuHandler(w, m);
 
     convertPrices(saved, settings);
   }

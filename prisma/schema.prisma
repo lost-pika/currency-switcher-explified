@@ -43,6 +43,7 @@ model MerchantSettings {
   baseCurrency       String   @default("USD")
 
   placement          String   @default("fixed")
+  inlineSide         String?  @default("right")
 
   // 👇 FIXED-ONLY FIELDS (optional)
   fixedCorner        String?

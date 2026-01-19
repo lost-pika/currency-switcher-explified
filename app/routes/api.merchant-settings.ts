@@ -55,6 +55,7 @@ export async function action({ request }) {
     distanceRight,
     distanceBottom,
     distanceLeft,
+    inlineSide, // ✅ Already destructured
   } = body;
 
   // ✅ Build data conditionally
@@ -73,6 +74,10 @@ export async function action({ request }) {
     data.distanceLeft = distanceLeft;
   }
 
+  if (placement === "inline") {
+    data.inlineSide = inlineSide; // ✅ Already storing inlineSide
+  }
+
   await prisma.merchantSettings.upsert({
     where: { shop },
     update: data,
@@ -84,5 +89,3 @@ export async function action({ request }) {
 
   return new Response(null, { status: 204 });
 }
-
-
