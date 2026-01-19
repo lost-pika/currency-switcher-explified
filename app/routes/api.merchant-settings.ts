@@ -75,7 +75,7 @@ export async function action({ request }) {
   }
 
   if (placement === "inline") {
-    data.inlineSide = inlineSide; // ✅ Already storing inlineSide
+    // data.inlineSide = inlineSide; // ✅ Already storing inlineSide
   }
 
   await prisma.merchantSettings.upsert({
