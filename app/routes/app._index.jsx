@@ -471,12 +471,7 @@ function PlacementSelector({
         {/* header */}
         <div className="flex flex-col md:flex-row justify-between gap-5 items-start md:items-end mb-8 px-2">
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1 cursor-pointer">
-              <span className="text-xl">←</span>
-              <span className="hover:underline" onClick={onBack}>
-                Settings
-              </span>
-            </div>
+            
             <h1 className="text-3xl font-semibold text-gray-800">
               Auto Currency Converter
             </h1>
