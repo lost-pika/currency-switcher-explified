@@ -644,10 +644,11 @@ function PlacementSelector({
 //   );
 // }
 
+
 function ConfirmationScreen({ onReview }) {
   const shop = window.Shopify?.shop;
   const themeEditorUrl = shop
-    ? `https://admin.shopify.com/store/${shop}/themes/current/editor?context=apps`
+    ? `https://${shop}/admin/api/2024-10/themes/${mainTheme.id}/assets.json?asset[key]=config/settings_data.json`
     : "https://admin.shopify.com/themes";
 
   return (
