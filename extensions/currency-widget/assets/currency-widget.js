@@ -141,21 +141,34 @@
   /* ================= CONVERSION ================= */
   async function convertPrices(cur, settings) {
     const base = settings.baseCurrency;
+    const nodes = findPriceNodes();
 
+    // RESTORE BASE CURRENCY
     if (cur === base) {
-      findPriceNodes().forEach((el) => {
-        if (el.dataset.orig) el.textContent = el.dataset.orig;
+      nodes.forEach((el) => {
+        if (el.dataset.origAmount) {
+          const val = parseFloat(el.dataset.origAmount);
+          el.textContent = formatAmount(val, base);
+        }
       });
       return;
     }
 
+    // GET RATE
     const rate = await fetchRates(base, cur);
     if (!rate) return;
 
-    findPriceNodes().forEach((el) => {
-      if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-      const val = parseAmount(el.dataset.orig);
-      if (val !== null) {
+    // CONVERT
+    nodes.forEach((el) => {
+      if (!el.dataset.origAmount) {
+        const numeric = parseAmount(el.textContent);
+        if (numeric !== null) {
+          el.dataset.origAmount = numeric;
+        }
+      }
+
+      const val = parseFloat(el.dataset.origAmount);
+      if (!isNaN(val)) {
         el.textContent = formatAmount(val * rate, cur);
       }
     });
@@ -231,9 +244,7 @@
     if (settings.placement === "hidden") return;
 
     const saved =
-      localStorage.getItem(KEY) ||
-      settings.defaultCurrency ||
-      detectCurrency();
+      localStorage.getItem(KEY) || settings.defaultCurrency || detectCurrency();
 
     const w = document.createElement("div");
     w.id = PICK;
@@ -279,11 +290,41 @@
       m.style.display = "block";
 
       if (settings.placement === "inline") {
-        m.style.position = "absolute";
-        m.style.top = "100%";
-        m.style.left = "0";
-        w.appendChild(m);
-        return;
+        const header = findHeader();
+
+        if (header) {
+          w.style.position = "relative";
+          w.style.transform = "translateY(-4px)";
+
+          // Create an inner flex container in the header
+          let container = header.querySelector("#__mlv_inline_container");
+          if (!container) {
+            container = document.createElement("div");
+            container.id = "__mlv_inline_container";
+            container.style.display = "flex";
+            container.style.alignItems = "center";
+            container.style.gap = "10px";
+
+            // Make header a flexbox if not already
+            header.style.display = "flex";
+            header.style.alignItems = "center";
+            header.style.justifyContent = "space-between";
+
+            header.appendChild(container);
+          }
+
+          // LEFT or RIGHT based on fixedCorner
+          if (settings.fixedCorner.includes("left")) {
+            container.style.order = "-1"; // left side
+            container.prepend(w);
+          } else {
+            container.style.order = "999"; // right side
+            container.appendChild(w);
+          }
+        } else {
+          placeFixed(w, settings);
+          document.body.appendChild(w);
+        }
       }
 
       const r = w.getBoundingClientRect();
