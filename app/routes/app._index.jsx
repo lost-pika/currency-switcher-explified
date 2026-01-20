@@ -518,7 +518,7 @@ function PlacementSelector({
                   <option value="Inline with the header">
                     Inline with the header
                   </option>
-                  <option value="Don't show at all">Don't show at all</option>
+                  {/* <option value="Don't show at all">Don't show at all</option> */}
                 </select>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
                   <svg
@@ -550,22 +550,32 @@ function PlacementSelector({
                   <span className="text-gray-400 text-sm">Store Content</span>
                 </div>
 
-                <CornerCheckbox
-                  corner="top-left"
-                  initialPosition={{ top: 8, left: 8 }}
-                />
-                <CornerCheckbox
-                  corner="top-right"
-                  initialPosition={{ top: 8, right: 8 }}
-                />
-                <CornerCheckbox
-                  corner="bottom-left"
-                  initialPosition={{ bottom: 8, left: 8 }}
-                />
-                <CornerCheckbox
-                  corner="bottom-right"
-                  initialPosition={{ bottom: 8, right: 8 }}
-                />
+                {/* Show only top-right in Inline mode */}
+                {placement === "Inline with the header" ? (
+                  <CornerCheckbox
+                    corner="top-right"
+                    initialPosition={{ top: 8, right: 8 }}
+                  />
+                ) : (
+                  <>
+                    <CornerCheckbox
+                      corner="top-left"
+                      initialPosition={{ top: 8, left: 8 }}
+                    />
+                    <CornerCheckbox
+                      corner="top-right"
+                      initialPosition={{ top: 8, right: 8 }}
+                    />
+                    <CornerCheckbox
+                      corner="bottom-left"
+                      initialPosition={{ bottom: 8, left: 8 }}
+                    />
+                    <CornerCheckbox
+                      corner="bottom-right"
+                      initialPosition={{ bottom: 8, right: 8 }}
+                    />
+                  </>
+                )}
 
                 {placement === "Inline with the header" && (
                   <div className="absolute top-2 right-2 p-1">
@@ -905,7 +915,7 @@ export default function SettingsRoute() {
         defaultCurrency: step1Data.defaultCurrency,
         baseCurrency: "USD",
         placement: normalizedPlacement,
-       inlineSide: normalizedPlacement === "inline" ? data.inlineSide : null,
+        inlineSide: normalizedPlacement === "inline" ? data.inlineSide : null,
         fixedCorner: normalizedPlacement === "fixed" ? data.fixedCorner : null,
         distanceTop: data.distanceTop,
         distanceRight: data.distanceRight,
@@ -949,7 +959,7 @@ export default function SettingsRoute() {
     const normalizePlacementForUI = (placement) => {
       if (placement === "fixed") return "Fixed Position";
       if (placement === "inline") return "Inline with the header";
-      if (placement === "hidden") return "Don't show at all";
+      // if (placement === "hidden") return "Don't show at all";
       return "Fixed Position";
     };
 

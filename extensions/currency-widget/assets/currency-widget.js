@@ -46,6 +46,8 @@
     ".site-header",
   ];
 
+  let __MLV_WIDGET_INITED__ = false;
+
   /* ================= STORAGE ================= */
   const now = () => Date.now();
 
@@ -319,6 +321,7 @@
     }
   }
 
+
   function createWidget(settings) {
     document.getElementById(PICK)?.remove();
     document.getElementById(MENU)?.remove();
@@ -363,11 +366,21 @@
 
       if (header) {
         // ✅ FIXED: Look for right column or icons container first
-        let target =
-          header.querySelector(".header__column--right") ||
-          header.querySelector(".header__icons") ||
-          header.querySelector(".header__actions") ||
-          header;
+                // ✅ IMPROVED: Prioritize right-side containers, fallback to header end
+        let target = header.querySelector(".header__column--right") ||
+                     header.querySelector(".header__icons") ||
+                     header.querySelector(".header__actions") ||
+                     header.querySelector(".header__menu") ||
+                     header;
+        
+        // If target is the header itself, try to find the rightmost section
+        if (target === header) {
+          const rightContainers = header.querySelectorAll("[class*='right'], [class*='icons'], [class*='actions']");
+          if (rightContainers.length > 0) {
+            target = rightContainers[rightContainers.length - 1];
+          }
+        }
+
 
         console.log(
           "📍 [INLINE] Target element:",
@@ -407,11 +420,18 @@
   }
 
   /* ================= INIT ================= */
-  async function init() {
+    async function init() {
+    if (__MLV_WIDGET_INITED__) return;
+    __MLV_WIDGET_INITED__ = true;
     injectCSS();
+    
+    // Wait 500ms for Shopify's theme JS to finish rendering
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     const settings = await loadSettings();
     createWidget(settings);
   }
+
 
   document.readyState === "loading"
     ? document.addEventListener("DOMContentLoaded", init)
